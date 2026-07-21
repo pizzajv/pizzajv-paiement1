@@ -1200,7 +1200,7 @@ input:checked + .toggle-slider:before {
       <div class="payment-total-amount" id="payment-total-amount">0,00 €</div>
     </div>
     <div class="payment-options">
-      <div class="payment-option" onclick="completePayment('cb')">💳 Carte bancaire</div>
+      <div class="payment-option" onclick="payWithSumUp()">💳 Carte bancaire (SumUp)</div>
       <div class="payment-option" onclick="completePayment('cash')">💵 Espèces</div>
       <div class="payment-option" onclick="completePayment('check')">✓ Chèque</div>
       <div class="payment-option" onclick="completePayment('ticket')">🎫 Ticket R.</div>
@@ -1214,6 +1214,15 @@ const STORAGE_KEY = 'pizzajv_transactions';
 const CART_KEY = 'pizzajv_cart';
 const BUSINESS_KEY = 'pizzajv_business';
 const LOYALTY_KEY = 'pizzajv_loyalty';
+const SUMUP_PENDING_KEY = 'pizzajv_sumup_pending';
+
+// Cles SumUp cote client (URL scheme) - PAS de secret ici, uniquement
+// la cle affiliate generee sur developer.sumup.com (me.sumup.com/developers).
+// A completer par Thomas :
+const SUMUP_CONFIG = {
+  affiliateKey: 'sup_afk_0H5j4AWfAzKW8nc7sUolcCiUMQlwVUnM',   // me.sumup.com/developers
+  appId: 'fr.pizzajv.pwa'                         // doit correspondre a l'App ID enregistre pour la cle
+};
 
 const DEFAULT_BUSINESS = {
   name: 'PizzaJV',
@@ -1607,13 +1616,8 @@ function closePaymentModal() {
   document.getElementById('payment-modal').classList.remove('active');
 }
 
-function completePayment(mode) {
-  closePaymentModal();
-  cart = getCart();
-  if (cart.length === 0) return;
-
+function buildTransactionFromCart(mode) {
   const total = cart.reduce((sum, item) => sum + (item.price * (item.qty || 1)), 0);
-  
   const items = [];
   cart.forEach(item => {
     const qty = item.qty || 1;
@@ -1621,8 +1625,7 @@ function completePayment(mode) {
       items.push({ name: item.name, price: item.price });
     }
   });
-  
-  const transaction = {
+  return {
     id: Date.now(),
     date: new Date().toISOString(),
     amount: total,
@@ -1632,7 +1635,9 @@ function completePayment(mode) {
     detailedItems: cart.map(i => ({ name: i.name, price: i.price, qty: i.qty || 1 })),
     number: getTransactions().length + 1
   };
+}
 
+function saveAndShowTransaction(transaction) {
   const transactions = getTransactions();
   transactions.push(transaction);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions));
@@ -1640,6 +1645,77 @@ function completePayment(mode) {
   clearCart();
   updateDashboard();
   showReceipt(transaction);
+}
+
+function completePayment(mode) {
+  closePaymentModal();
+  cart = getCart();
+  if (cart.length === 0) return;
+  const transaction = buildTransactionFromCart(mode);
+  saveAndShowTransaction(transaction);
+}
+
+// ---- Paiement carte via SumUp (deep link URL scheme) ----
+function payWithSumUp() {
+  closePaymentModal();
+  cart = getCart();
+  if (cart.length === 0) return;
+
+  if (!SUMUP_CONFIG.affiliateKey || SUMUP_CONFIG.affiliateKey === 'REMPLACER_PAR_AFFILIATE_KEY') {
+    alert("Cle SumUp non configuree. Va sur me.sumup.com/developers, genere une cle affiliate, et renseigne-la dans SUMUP_CONFIG (haut du script).");
+    return;
+  }
+
+  const transaction = buildTransactionFromCart('cb');
+  const foreignTxId = 'pizzajv-' + transaction.id;
+
+  // On stocke la transaction en attente (pas encore comptabilisee)
+  // le temps que SumUp confirme le paiement via callback.
+  localStorage.setItem(SUMUP_PENDING_KEY, JSON.stringify({ foreignTxId, transaction }));
+
+  const baseUrl = window.location.origin + window.location.pathname;
+  const callbackSuccess = baseUrl + '?sumup_status=success&tx=' + encodeURIComponent(foreignTxId);
+  const callbackFail = baseUrl + '?sumup_status=fail&tx=' + encodeURIComponent(foreignTxId);
+
+  const params = new URLSearchParams({
+    'affiliate-key': SUMUP_CONFIG.affiliateKey,
+    'app-id': SUMUP_CONFIG.appId,
+    'amount': transaction.amount.toFixed(2),
+    'total': transaction.amount.toFixed(2),
+    'currency': 'EUR',
+    'title': 'PizzaJV - Commande',
+    'foreign-tx-id': foreignTxId,
+    'callbacksuccess': callbackSuccess,
+    'callbackfail': callbackFail,
+    'callback': callbackSuccess
+  });
+
+  window.location.href = 'sumupmerchant://pay/1.0?' + params.toString();
+}
+
+function processSumUpCallback() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const status = urlParams.get('sumup_status');
+  if (!status) return;
+
+  const txParam = urlParams.get('tx');
+  const pendingRaw = localStorage.getItem(SUMUP_PENDING_KEY);
+
+  // Nettoyer l'URL immediatement pour eviter un double traitement au refresh
+  const cleanUrl = window.location.origin + window.location.pathname;
+  window.history.replaceState({}, document.title, cleanUrl);
+
+  if (!pendingRaw) return;
+  const pending = JSON.parse(pendingRaw);
+  if (pending.foreignTxId !== txParam) return;
+
+  localStorage.removeItem(SUMUP_PENDING_KEY);
+
+  if (status === 'success') {
+    saveAndShowTransaction(pending.transaction);
+  } else {
+    alert('Paiement SumUp annule ou echoue. Le panier est conserve, tu peux reessayer ou choisir un autre mode.');
+  }
 }
 
 function saveTransactionData(transaction) {
@@ -2115,6 +2191,9 @@ window.addEventListener('load', () => {
     setTimeout(() => splash.remove(), 700);
   }, 3000);
 });
+
+// Retour de paiement SumUp (callback URL)
+processSumUpCallback();
 
 function showSection(name) {
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
