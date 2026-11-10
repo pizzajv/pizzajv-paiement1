@@ -1,0 +1,5199 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="PizzaJV - Gestion des paiements">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="PizzaJV">
+<title>PizzaJV Paiement</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+/* MODE JOUR (défaut) */
+:root {
+  --cream: #F5F1E8;
+  --surface: #FFFFFF;
+  --surface-alt: #F5F1E8;
+  --border: #E8E0D5;
+  --terracotta: #D4704C;
+  --terracotta-dark: #B85D3F;
+  --olive: #6B8E5C;
+  --brown: #3D3429;
+  --brown-light: #6B5D52;
+  --gold: #D4A574;
+  --danger: #C85C54;
+  --success: #4CAF50;
+  --whatsapp: #25D366;
+  --sms: #007AFF;
+  --email: #E94B3C;
+  --shadow: rgba(0,0,0,0.15);
+}
+
+/* MODE NUIT - auto (suit iPhone) */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --cream: #1A1814;
+    --surface: #2A2520;
+    --surface-alt: #221E1A;
+    --border: #3D3429;
+    --terracotta: #E88661;
+    --terracotta-dark: #D4704C;
+    --olive: #8BAE7C;
+    --brown: #F5F1E8;
+    --brown-light: #B5AA9C;
+    --gold: #E4B584;
+    --danger: #E07A72;
+    --success: #6DCF70;
+    --shadow: rgba(0,0,0,0.5);
+  }
+}
+
+/* MODE NUIT - forcé manuellement */
+:root[data-theme="dark"] {
+  --cream: #1A1814;
+  --surface: #2A2520;
+  --surface-alt: #221E1A;
+  --border: #3D3429;
+  --terracotta: #E88661;
+  --terracotta-dark: #D4704C;
+  --olive: #8BAE7C;
+  --brown: #F5F1E8;
+  --brown-light: #B5AA9C;
+  --gold: #E4B584;
+  --danger: #E07A72;
+  --success: #6DCF70;
+  --shadow: rgba(0,0,0,0.5);
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--cream);
+  color: var(--brown);
+  transition: background 0.3s, color 0.3s;
+}
+.app-container {
+  max-width: 420px;
+  margin: 0 auto;
+  background: var(--cream);
+  min-height: 100vh;
+  padding: 16px;
+  padding-bottom: 120px;
+}
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid var(--terracotta);
+}
+.header h1 {
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--brown);
+}
+.header p {
+  font-size: 12px;
+  color: var(--brown-light);
+  text-transform: uppercase;
+}
+.header-actions {
+  display: flex;
+  gap: 4px;
+}
+.header-btn {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 8px;
+  color: var(--brown);
+}
+.main-dashboard {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  text-align: center;
+}
+.stat-label {
+  font-size: 11px;
+  color: var(--brown-light);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.stat-value {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--terracotta);
+}
+.action-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+button {
+  padding: 12px 16px;
+  border: 1.5px solid var(--terracotta);
+  background: var(--surface);
+  color: var(--terracotta);
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  -webkit-appearance: none;
+  font-family: inherit;
+}
+.btn-primary {
+  background: var(--terracotta);
+  color: white;
+  grid-column: 1 / -1;
+}
+.btn-secondary {
+  background: var(--surface);
+  color: var(--brown-light);
+  border-color: var(--brown-light);
+}
+.section { display: none; }
+.section.active { display: block; }
+.form-group { margin-bottom: 16px; }
+label {
+  display: block;
+  font-size: 12px;
+  text-transform: uppercase;
+  color: var(--brown-light);
+  margin-bottom: 6px;
+}
+input, select, textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 16px;
+  color: var(--brown);
+  background: var(--surface);
+  font-family: inherit;
+  -webkit-appearance: none;
+}
+.payment-modes {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+.mode-btn {
+  padding: 10px;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  color: var(--brown);
+  border-radius: 6px;
+  font-size: 12px;
+}
+.mode-btn.selected {
+  background: var(--olive);
+  color: white;
+  border-color: var(--olive);
+}
+.catalog-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.tab-btn {
+  padding: 10px 6px;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  color: var(--brown);
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.tab-btn.active {
+  background: var(--terracotta);
+  color: white;
+  border-color: var(--terracotta);
+}
+.product-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.product-btn {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 12px;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.3s;
+  position: relative;
+}
+.product-btn:active {
+  background: var(--terracotta);
+  color: white;
+  border-color: var(--terracotta);
+}
+.product-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--brown);
+  margin-bottom: 4px;
+}
+.product-btn:active .product-name { color: white; }
+.product-price {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--terracotta);
+}
+.product-btn:active .product-price { color: white; }
+.product-qty-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background: var(--terracotta);
+  color: white;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  border: 2px solid var(--cream);
+}
+.subcategory-title {
+  font-size: 14px;
+  color: var(--terracotta);
+  margin-bottom: 12px;
+  margin-top: 16px;
+  font-weight: 600;
+}
+.subcategory-title:first-child { margin-top: 0; }
+.transaction-item {
+  background: var(--surface);
+  border-left: 3px solid var(--terracotta);
+  border-radius: 4px;
+  padding: 12px;
+  margin-bottom: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+}
+.transaction-info { flex: 1; }
+.transaction-type {
+  font-size: 11px;
+  color: var(--brown-light);
+  margin-bottom: 2px;
+}
+.transaction-client {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--brown);
+}
+.transaction-amount {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--terracotta);
+  margin-right: 12px;
+}
+.transaction-delete {
+  background: none;
+  border: none;
+  color: var(--danger);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px;
+}
+.history-list {
+  max-height: 400px;
+  overflow-y: auto;
+  margin-bottom: 16px;
+}
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--brown-light);
+}
+.receipt {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+.receipt-business {
+  text-align: center;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 10px;
+  margin-bottom: 10px;
+  font-size: 11px;
+  color: var(--brown-light);
+  line-height: 1.5;
+}
+.receipt-business-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--brown);
+  margin-bottom: 4px;
+}
+.receipt-header {
+  text-align: center;
+  border-bottom: 2px dashed var(--terracotta);
+  padding-bottom: 10px;
+  margin-bottom: 12px;
+}
+.receipt-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--brown);
+  margin-bottom: 4px;
+}
+.receipt-meta {
+  font-size: 10px;
+  color: var(--brown-light);
+  text-transform: uppercase;
+}
+.receipt-content {
+  text-align: left;
+  font-size: 12px;
+  margin-bottom: 12px;
+  color: var(--brown);
+}
+.receipt-line {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  padding-bottom: 6px;
+}
+.receipt-line.total {
+  border-top: 2px dashed var(--terracotta);
+  padding-top: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--terracotta);
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+.receipt-payment {
+  text-align: center;
+  font-size: 12px;
+  color: var(--brown);
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
+  margin-top: 10px;
+}
+.receipt-legal {
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
+  margin-top: 10px;
+  font-size: 9px;
+  color: var(--brown-light);
+  text-align: center;
+  line-height: 1.5;
+  font-style: italic;
+}
+.receipt-footer {
+  border-top: 2px dashed var(--terracotta);
+  padding-top: 10px;
+  margin-top: 10px;
+  font-size: 10px;
+  color: var(--brown-light);
+  text-align: center;
+}
+.send-buttons {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.btn-email {
+  background: var(--email);
+  color: white;
+  border-color: var(--email);
+}
+.btn-sms {
+  background: var(--sms);
+  color: white;
+  border-color: var(--sms);
+}
+.btn-whatsapp {
+  background: var(--whatsapp);
+  color: white;
+  border-color: var(--whatsapp);
+}
+.settings-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+.settings-title {
+  font-size: 12px;
+  text-transform: uppercase;
+  color: var(--brown-light);
+  margin-bottom: 12px;
+  font-weight: 600;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 8px;
+}
+.setting-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+  align-items: center;
+}
+.setting-item:last-child { border-bottom: none; }
+.setting-label {
+  font-size: 13px;
+  color: var(--brown);
+  font-weight: 600;
+}
+.setting-value {
+  font-size: 12px;
+  color: var(--brown-light);
+}
+.theme-options {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.theme-option {
+  padding: 12px 8px;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  color: var(--brown);
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+}
+.theme-option.active {
+  background: var(--terracotta);
+  color: white;
+  border-color: var(--terracotta);
+}
+.modal-backdrop {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.modal-backdrop.active { display: flex; }
+.modal-content {
+  background: var(--surface);
+  border-radius: 12px;
+  padding: 24px;
+  max-width: 320px;
+  width: 100%;
+  text-align: center;
+}
+.modal-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--brown);
+  margin-bottom: 12px;
+}
+.modal-text {
+  font-size: 12px;
+  color: var(--brown-light);
+  margin-bottom: 16px;
+}
+.modal-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.badge {
+  display: inline-block;
+  background: var(--olive);
+  color: white;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 10px;
+  text-transform: uppercase;
+  margin-top: 4px;
+}
+.btn-danger {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+.cart-floating {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 32px);
+  max-width: 388px;
+  background: var(--surface);
+  border: 2px solid var(--terracotta);
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: 0 4px 12px var(--shadow);
+  z-index: 100;
+}
+.cart-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.cart-total-fixed {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--terracotta);
+}
+.cart-items-count {
+  font-size: 12px;
+  color: var(--brown-light);
+}
+.cart-buttons {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 8px;
+}
+.cart-buttons button {
+  padding: 10px;
+  font-size: 12px;
+}
+.cart-detail {
+  max-height: 200px;
+  overflow-y: auto;
+  margin-bottom: 8px;
+  padding: 8px;
+  background: var(--surface-alt);
+  border-radius: 6px;
+  font-size: 12px;
+}
+.cart-detail-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--border);
+}
+.cart-detail-item:last-child { border-bottom: none; }
+.cart-detail-name {
+  flex: 1;
+  color: var(--brown);
+}
+.cart-qty-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.qty-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1px solid var(--terracotta);
+  background: var(--surface);
+  color: var(--terracotta);
+  font-size: 14px;
+  font-weight: 700;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+.qty-display {
+  min-width: 20px;
+  text-align: center;
+  font-weight: 600;
+  color: var(--brown);
+}
+.cart-item-price {
+  font-weight: 600;
+  color: var(--terracotta);
+  margin-left: 8px;
+  min-width: 50px;
+  text-align: right;
+}
+.payment-modal {
+  background: var(--surface);
+  border-radius: 12px;
+  padding: 20px;
+  max-width: 340px;
+  width: 100%;
+}
+.payment-modal h3 {
+  font-size: 16px;
+  margin-bottom: 16px;
+  text-align: center;
+  color: var(--brown);
+}
+.payment-total {
+  background: var(--surface-alt);
+  border-radius: 8px;
+  padding: 12px;
+  text-align: center;
+  margin-bottom: 16px;
+}
+.payment-total-amount {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--terracotta);
+}
+.payment-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.payment-option {
+  padding: 16px 8px;
+  border: 2px solid var(--border);
+  background: var(--surface);
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  color: var(--brown);
+}
+.payment-option:active {
+  background: var(--terracotta);
+  color: white;
+  border-color: var(--terracotta);
+}
+.stat-bar {
+  background: var(--surface-alt);
+  border-radius: 4px;
+  height: 6px;
+  margin-top: 6px;
+  overflow: hidden;
+}
+.stat-bar-fill {
+  background: var(--terracotta);
+  height: 100%;
+  border-radius: 4px;
+}
+.stat-product {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 8px;
+}
+.stat-product-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+.stat-product-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--brown);
+}
+.stat-product-revenue {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--terracotta);
+}
+.stat-product-meta {
+  font-size: 11px;
+  color: var(--brown-light);
+}
+.event-banner {
+  display: none;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  background: var(--olive);
+  color: white;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.event-banner.active { display: flex; }
+.event-banner small { font-weight: 400; opacity: 0.9; white-space: nowrap; }
+.qr-box {
+  background: #FFFFFF;
+  padding: 10px;
+  border-radius: 8px;
+  display: inline-block;
+  line-height: 0;
+}
+.qr-box svg { display: block; width: 130px; height: 130px; }
+.qr-box.qr-big svg { width: 250px; height: 250px; }
+.receipt-review {
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+  margin-top: 10px;
+  text-align: center;
+  font-size: 11px;
+  color: var(--brown-light);
+}
+.hint {
+  font-size: 11px;
+  color: var(--brown-light);
+  margin-top: 6px;
+  line-height: 1.4;
+}
+.event-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 12px;
+}
+.toast {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--olive);
+  color: white;
+  padding: 10px 16px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  z-index: 2000;
+  box-shadow: 0 4px 12px var(--shadow);
+  display: none;
+  max-width: 90%;
+  text-align: center;
+}
+.toast.active { display: block; }
+.payment-modal { max-height: 92vh; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.acc-head {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 12px;
+  background: var(--surface-alt);
+  color: var(--brown);
+  border: 1.5px solid var(--border);
+  font-size: 13px;
+  text-align: left;
+}
+.acc-head.open { border-color: var(--terracotta); }
+.acc-head.on { border-color: var(--olive); }
+.acc-state { font-size: 12px; font-weight: 500; color: var(--brown-light); text-align: right; }
+.acc-head.on .acc-state { color: var(--olive); font-weight: 700; }
+.acc-body {
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px;
+  margin-top: 6px;
+}
+.chip-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 8px; }
+.chip-label { font-size: 11px; color: var(--brown-light); min-width: 32px; }
+.chip { padding: 8px 10px; font-size: 13px; border-radius: 16px; }
+.chip.active { background: var(--terracotta); color: white; }
+.supp-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--brown);
+  padding: 4px 0;
+  border-bottom: 1px solid var(--border);
+}
+.supp-line span.n { flex: 1; }
+.pay-section-gap { height: 12px; }
+textarea { resize: vertical; }
+.catalog-tabs { grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.catalog-tabs .tab-btn { padding: 9px 2px; font-size: 10.5px; }
+</style>
+</head>
+<body>
+
+<div class="app-container">
+  <div class="header">
+    <div>
+      <h1>🍕 PizzaJV</h1>
+      <p>Gestion des paiements</p>
+    </div>
+    <div class="header-actions">
+      <button class="header-btn" id="theme-toggle" onclick="toggleTheme()" title="Changer thème">🌙</button>
+      <button class="header-btn" onclick="showSection('settings')">⚙️</button>
+    </div>
+  </div>
+
+  <div class="event-banner" id="event-banner" onclick="showSection('events')">
+    <span id="event-banner-text"></span>
+    <small>Gérer ›</small>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="dashboard" class="section active">
+    <div class="main-dashboard">
+      <div class="stat-card">
+        <div class="stat-label">Aujourd'hui</div>
+        <div class="stat-value" id="today-total">0,00 €</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Transactions</div>
+        <div class="stat-value" id="today-count">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Cette semaine</div>
+        <div class="stat-value" id="week-total">0,00 €</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Séquence</div>
+        <div class="stat-value" id="next-number">#1</div>
+      </div>
+    </div>
+
+    <div class="action-buttons">
+      <button class="btn-primary" onclick="showSection('catalog')">📋 Catalogue</button>
+      <button onclick="showSection('transaction')">+ Manuel</button>
+      <button onclick="showSection('history')">📜 Historique</button>
+      <button onclick="showSection('stats')">📊 Stats</button>
+      <button onclick="showSection('events')">🎉 Événement</button>
+      <button onclick="showSection('review')">⭐ Avis Google</button>
+      <button onclick="manualReport()">📅 Rapport du jour</button>
+      <button onclick="exportCSV()" style="grid-column: 1 / -1;">📊 Export CSV</button>
+    </div>
+
+    <div id="ready-panel"></div>
+
+    <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; text-align: center;">
+      <p style="font-size: 12px; color: var(--brown-light); margin-bottom: 12px;">Dernière transaction</p>
+      <div id="last-transaction" style="font-size: 13px; color: var(--brown);">
+        <p>Aucune transaction</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- CATALOG -->
+  <div id="catalog" class="section">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+      <h2 style="color: var(--brown); font-size: 18px;">Catalogue</h2>
+      <button class="btn-secondary" style="padding: 6px 10px; font-size: 12px;" onclick="showSection('dashboard')">← Retour</button>
+    </div>
+    
+    <div class="catalog-tabs">
+      <button class="tab-btn active" onclick="switchCatalogTab(this, 'pizzas')">🍕 Pizzas</button>
+      <button class="tab-btn" onclick="switchCatalogTab(this, 'teglia')">🥧 Teglia</button>
+      <button class="tab-btn" onclick="switchCatalogTab(this, 'panuozzo')">🥖 Panuozzo</button>
+      <button class="tab-btn" onclick="switchCatalogTab(this, 'desserts')">🍰 Desserts</button>
+      <button class="tab-btn" onclick="switchCatalogTab(this, 'bieres')">🍺 Bières</button>
+      <button class="tab-btn" onclick="switchCatalogTab(this, 'vins')">🍷 Vins</button>
+      <button class="tab-btn" onclick="switchCatalogTab(this, 'boissons')">🥤 Boissons</button>
+    </div>
+
+    <div id="catalog-pizzas" class="catalog-content">
+      <div class="product-grid" id="grid-pizzas"></div>
+    </div>
+    <div id="catalog-teglia" class="catalog-content" style="display: none;">
+      <div class="product-grid" id="grid-teglia"></div>
+    </div>
+    <div id="catalog-panuozzo" class="catalog-content" style="display: none;">
+      <div class="product-grid" id="grid-panuozzo"></div>
+    </div>
+    <div id="catalog-bieres" class="catalog-content" style="display: none;">
+      <div class="product-grid" id="grid-bieres"></div>
+    </div>
+    <div id="catalog-vins" class="catalog-content" style="display: none;">
+      <div class="product-grid" id="grid-vins"></div>
+    </div>
+    <div id="catalog-boissons" class="catalog-content" style="display: none;">
+      <div class="subcategory-title">💧 Eaux</div>
+      <div class="product-grid" id="grid-boissons-eau"></div>
+      <div class="subcategory-title">🥤 Softs</div>
+      <div class="product-grid" id="grid-boissons-soft"></div>
+      <div class="subcategory-title">☕ Boissons chaudes</div>
+      <div class="product-grid" id="grid-boissons-chaudes"></div>
+    </div>
+    <div id="catalog-desserts" class="catalog-content" style="display: none;">
+      <div class="product-grid" id="grid-desserts"></div>
+    </div>
+  </div>
+
+  <!-- FLOATING CART -->
+  <div class="cart-floating" id="cart-floating" style="display: none;">
+    <div class="cart-detail" id="cart-detail"></div>
+    <div class="cart-summary">
+      <div>
+        <div class="cart-total-fixed" id="cart-total-fixed">0,00 €</div>
+        <div class="cart-items-count" id="cart-items-count">0 article</div>
+      </div>
+    </div>
+    <div class="cart-buttons">
+      <button class="btn-secondary" onclick="clearCart()">🗑️</button>
+      <button class="btn-primary" id="cart-pay-btn" style="grid-column: auto;" onclick="openPaymentModal()">💳 Payer</button>
+    </div>
+  </div>
+
+  <!-- FORM TRANSACTION -->
+  <div id="transaction" class="section">
+    <h2 style="margin-bottom: 20px; color: var(--brown); font-size: 18px;">Transaction Manuelle</h2>
+    <div class="form-group">
+      <label>Montant (€)</label>
+      <input type="number" id="amount" placeholder="0,00" step="0.01" min="0" inputmode="decimal">
+    </div>
+    <div class="form-group">
+      <label>Mode de paiement</label>
+      <div class="payment-modes">
+        <button type="button" class="mode-btn" data-mode="cb" onclick="selectMode(this)">💳 CB</button>
+        <button type="button" class="mode-btn" data-mode="cash" onclick="selectMode(this)">💵 Espèces</button>
+        <button type="button" class="mode-btn" data-mode="check" onclick="selectMode(this)">✓ Chèque</button>
+        <button type="button" class="mode-btn" data-mode="ticket" onclick="selectMode(this)">🎫 Ticket R.</button>
+        <button type="button" class="mode-btn" data-mode="transfer" onclick="selectMode(this)">🏦 Virement</button>
+      </div>
+      <input type="hidden" id="paymentMode">
+    </div>
+    <div class="form-group">
+      <label>Client / Événement (optionnel)</label>
+      <input type="text" id="client" placeholder="Ex: Jennifer Pons">
+    </div>
+    <div class="form-group">
+      <label>Notes (optionnel)</label>
+      <input type="text" id="notes" placeholder="Détails">
+    </div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 24px;">
+      <button class="btn-secondary" onclick="showSection('dashboard')">Annuler</button>
+      <button class="btn-primary" onclick="saveTransaction()">Valider</button>
+    </div>
+  </div>
+
+  <!-- HISTORIQUE -->
+  <div id="history" class="section">
+    <h2 style="margin-bottom: 16px; color: var(--brown); font-size: 18px;">Historique</h2>
+    <div class="history-list" id="historyList"></div>
+    <button class="btn-secondary" style="width: 100%; margin-top: 16px;" onclick="showSection('dashboard')">Retour</button>
+  </div>
+
+  <!-- STATS -->
+  <div id="stats" class="section">
+    <h2 style="margin-bottom: 16px; color: var(--brown); font-size: 18px;">📊 Statistiques</h2>
+    <div class="settings-section">
+      <div class="settings-title">Période</div>
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
+        <button class="tab-btn active" id="period-day" onclick="setStatsPeriod('day', this)">Jour</button>
+        <button class="tab-btn" id="period-week" onclick="setStatsPeriod('week', this)">Semaine</button>
+        <button class="tab-btn" id="period-month" onclick="setStatsPeriod('month', this)">Mois</button>
+      </div>
+    </div>
+    <div class="settings-section">
+      <div class="settings-title">Résumé</div>
+      <div class="setting-item">
+        <div class="setting-label">💰 Chiffre d'affaires</div>
+        <div class="setting-value" id="stats-revenue">0,00 €</div>
+      </div>
+      <div class="setting-item">
+        <div class="setting-label">📦 Transactions</div>
+        <div class="setting-value" id="stats-count">0</div>
+      </div>
+      <div class="setting-item">
+        <div class="setting-label">📊 Panier moyen</div>
+        <div class="setting-value" id="stats-avg">0,00 €</div>
+      </div>
+    </div>
+    <div class="settings-section">
+      <div class="settings-title">💳 Modes de paiement</div>
+      <div id="stats-modes"></div>
+    </div>
+    <div class="settings-section">
+      <div class="settings-title">🏆 Top produits</div>
+      <div id="stats-products"></div>
+    </div>
+    <button class="btn-secondary" style="width: 100%; margin-top: 16px;" onclick="showSection('dashboard')">Retour</button>
+  </div>
+
+  <!-- EVENEMENTS -->
+  <div id="events" class="section">
+    <h2 style="margin-bottom: 16px; color: var(--brown); font-size: 18px;">🎉 Événements privés</h2>
+
+    <div id="event-active-panel"></div>
+
+    <div class="settings-section" id="event-form">
+      <div class="settings-title">Nouvel événement</div>
+      <div class="form-group">
+        <label>Nom de l'événement</label>
+        <input type="text" id="ev-name" placeholder="Ex : Mariage Dupont">
+      </div>
+      <div class="form-group">
+        <label>Type</label>
+        <select id="ev-type">
+          <option value="mariage">💍 Mariage</option>
+          <option value="anniversaire">🎂 Anniversaire</option>
+          <option value="entreprise">🏢 Entreprise</option>
+          <option value="association">🤝 Association</option>
+          <option value="autre">🎉 Autre</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Client / organisateur (optionnel)</label>
+        <input type="text" id="ev-client" placeholder="Nom du client">
+      </div>
+      <div class="form-group">
+        <label>Nombre d'invités (optionnel)</label>
+        <input type="number" id="ev-guests" min="0" step="1" inputmode="numeric" placeholder="60">
+      </div>
+      <div class="form-group">
+        <label>Facturation</label>
+        <select id="ev-billing" onchange="toggleForfaitField()">
+          <option value="forfait">Forfait : l'organisateur paie la prestation</option>
+          <option value="unit">À l'unité : chaque invité paie</option>
+        </select>
+        <p class="hint">Forfait : les pizzas servies sont comptées mais à 0 €, pour ne pas gonfler le chiffre d'affaires. Seul le forfait est encaissé.</p>
+      </div>
+      <div class="form-group" id="ev-forfait-group">
+        <label>Montant du forfait (€)</label>
+        <input type="number" id="ev-forfait" min="0" step="0.01" inputmode="decimal" placeholder="0,00">
+      </div>
+      <button class="btn-primary" style="width: 100%;" onclick="startEvent()">Démarrer l'événement</button>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-title">Événements terminés</div>
+      <div id="events-closed"></div>
+    </div>
+
+    <button class="btn-secondary" style="width: 100%;" onclick="showSection('dashboard')">Retour</button>
+  </div>
+
+  <!-- AVIS GOOGLE -->
+  <div id="review" class="section">
+    <h2 style="margin-bottom: 16px; color: var(--brown); font-size: 18px;">⭐ Avis Google</h2>
+    <div class="settings-section" style="text-align: center;" id="review-content"></div>
+    <button class="btn-secondary" style="width: 100%;" onclick="showSection('dashboard')">Retour</button>
+  </div>
+
+  <!-- SETTINGS -->
+  <div id="settings" class="section">
+    <h2 style="margin-bottom: 16px; color: var(--brown); font-size: 18px;">Paramètres</h2>
+    
+    <div class="settings-section">
+      <div class="settings-title">🎨 Apparence</div>
+      <div class="theme-options">
+        <button class="theme-option" id="theme-auto" onclick="setTheme('auto')">☀️🌙 Auto</button>
+        <button class="theme-option" id="theme-light" onclick="setTheme('light')">☀️ Jour</button>
+        <button class="theme-option" id="theme-dark" onclick="setTheme('dark')">🌙 Nuit</button>
+      </div>
+      <p style="font-size: 11px; color: var(--brown-light); margin-top: 8px; text-align: center;">Auto = suit les réglages de l'iPhone</p>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-title">⭐ Avis Google</div>
+      <div class="form-group" style="margin-bottom: 0;">
+        <label>Lien d'avis Google</label>
+        <input type="url" id="set-review-url" placeholder="https://g.page/r/…/review" autocapitalize="off" autocorrect="off">
+        <p class="hint">Fiche Google Business Profile → « Demander des avis » → copier le lien. Vide = pas de QR code sur les reçus.</p>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-title">🔔 Message « pizza prête »</div>
+      <textarea id="set-ready-msg" rows="4" maxlength="300"></textarea>
+      <p class="hint">{prenom} et {numero} sont remplacés automatiquement. Envoyé en SMS ou WhatsApp depuis la fenêtre Payer, le reçu ou l'accueil.</p>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-title">➕ Mes suppléments</div>
+      <textarea id="set-supps" rows="4" placeholder="Un par ligne : Nom ; prix"></textarea>
+      <p class="hint">Un par ligne, au format « Nom ; prix » (exemple de forme : Œuf ; 1,00). Ils apparaissent en boutons dans Payer, Supplément. Les prix sont à toi de les fixer.</p>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-title">📅 Rapport quotidien</div>
+      <div class="form-group">
+        <label>Rappel d'envoi</label>
+        <select id="set-report-enabled">
+          <option value="1">Activé</option>
+          <option value="0">Désactivé</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>À partir de</label>
+        <input type="time" id="set-report-hour">
+      </div>
+      <div class="form-group" style="margin-bottom: 0;">
+        <label>Envoyer à</label>
+        <input type="email" id="set-report-email" autocapitalize="off" autocorrect="off">
+        <p class="hint">Proposé uniquement les jours où il y a eu au moins une vente. L'envoi demande une validation dans Mail : un iPhone n'autorise pas l'envoi d'email en arrière-plan depuis cette app.</p>
+      </div>
+    </div>
+
+    <button class="btn-primary" style="width: 100%; margin-bottom: 16px;" onclick="saveSettingsForm()">Enregistrer les réglages</button>
+
+    <div class="settings-section">
+      <div class="settings-title">Infos Professionnelles</div>
+      <button class="btn-secondary" style="width: 100%;" onclick="showSection('business-info')">Modifier mes infos</button>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-title">💾 Sauvegarde</div>
+      <button class="btn-secondary" style="width: 100%; margin-bottom: 8px;" onclick="exportBackup()">📤 Exporter une sauvegarde</button>
+      <button class="btn-secondary" style="width: 100%;" onclick="document.getElementById('import-file').click()">📥 Importer une sauvegarde</button>
+      <input type="file" id="import-file" style="display: none;" accept=".json" onchange="importBackup(event)">
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-title">Données</div>
+      <div class="setting-item">
+        <div class="setting-label">Total transactions</div>
+        <div class="setting-value" id="total-transactions">0</div>
+      </div>
+      <div class="setting-item">
+        <div class="setting-label">Stockage</div>
+        <div class="setting-value" id="storage-size">0 KB</div>
+      </div>
+    </div>
+
+    <button class="btn-secondary" style="width: 100%; margin-top: 16px;" onclick="showSection('dashboard')">Retour</button>
+  </div>
+
+  <!-- BUSINESS INFO -->
+  <div id="business-info" class="section">
+    <h2 style="margin-bottom: 20px; color: var(--brown); font-size: 18px;">Infos Professionnelles</h2>
+    <div class="form-group"><label>Nom commercial</label><input type="text" id="biz-name"></div>
+    <div class="form-group"><label>Nom légal</label><input type="text" id="biz-legal"></div>
+    <div class="form-group"><label>SIRET</label><input type="text" id="biz-siret"></div>
+    <div class="form-group"><label>Adresse</label><input type="text" id="biz-address"></div>
+    <div class="form-group"><label>Téléphone</label><input type="tel" id="biz-phone"></div>
+    <div class="form-group"><label>Email</label><input type="email" id="biz-email"></div>
+    <div class="form-group"><label>Mention TVA</label><input type="text" id="biz-tva"></div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 24px;">
+      <button class="btn-secondary" onclick="showSection('settings')">Annuler</button>
+      <button class="btn-primary" onclick="saveBusinessInfo()">Sauvegarder</button>
+    </div>
+  </div>
+
+  <!-- RECEIPT -->
+  <div id="receipt" class="section">
+    <button class="btn-secondary" style="width: 100%; margin-bottom: 12px;" onclick="showSection('dashboard')">← Retour</button>
+    <div class="receipt" id="receiptContent"></div>
+    <div id="ready-box"></div>
+    <div class="send-buttons">
+      <button class="btn-email" onclick="sendByEmail()">📧 Email</button>
+      <button class="btn-sms" onclick="sendBySMS()">💬 SMS</button>
+      <button class="btn-whatsapp" onclick="sendByWhatsApp()">🟢 WhatsApp</button>
+    </div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+      <button class="btn-secondary" onclick="printReceipt()">🖨️ Imprimer</button>
+      <button class="btn-primary" onclick="showSection('dashboard')">Fermer</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="modal-backdrop" id="modal">
+  <div class="modal-content">
+    <div class="modal-title" id="modal-title"></div>
+    <div class="modal-text" id="modal-text"></div>
+    <div class="modal-buttons">
+      <button class="btn-secondary" id="modal-cancel">Annuler</button>
+      <button class="btn-danger" id="modal-confirm">Confirmer</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="payment-modal">
+  <div class="payment-modal">
+    <h3 id="payment-title">Mode de paiement</h3>
+    <div class="payment-total">
+      <div style="font-size: 11px; color: var(--brown-light); text-transform: uppercase;">Total</div>
+      <div class="payment-total-amount" id="payment-total-amount">0,00 €</div>
+      <div class="hint" id="payment-breakdown" style="margin-top: 4px;"></div>
+    </div>
+
+    <div id="pay-extras" style="margin-bottom: 14px;">
+      <button class="acc-head" id="acc-head-discount" onclick="toggleAcc('discount')"><span>🏷️ Remise</span><span class="acc-state" id="acc-state-discount">Aucune</span></button>
+      <div class="acc-body" id="acc-discount" style="display: none;">
+        <div class="chip-row"><span class="chip-label">En %</span>
+          <button class="chip" data-t="pct" data-v="5" onclick="setDiscount('pct', 5)">5 %</button>
+          <button class="chip" data-t="pct" data-v="10" onclick="setDiscount('pct', 10)">10 %</button>
+          <button class="chip" data-t="pct" data-v="15" onclick="setDiscount('pct', 15)">15 %</button>
+          <button class="chip" data-t="pct" data-v="20" onclick="setDiscount('pct', 20)">20 %</button>
+        </div>
+        <div class="chip-row"><span class="chip-label">En €</span>
+          <button class="chip" data-t="eur" data-v="1" onclick="setDiscount('eur', 1)">1 €</button>
+          <button class="chip" data-t="eur" data-v="2" onclick="setDiscount('eur', 2)">2 €</button>
+          <button class="chip" data-t="eur" data-v="5" onclick="setDiscount('eur', 5)">5 €</button>
+        </div>
+        <div class="chip-row">
+          <select id="disc-type" style="width: 70px;"><option value="pct">%</option><option value="eur">€</option></select>
+          <input type="number" id="disc-value" min="0" step="0.01" inputmode="decimal" placeholder="Autre" style="flex: 1; min-width: 0;">
+          <button class="chip" onclick="applyCustomDiscount()">OK</button>
+        </div>
+        <button class="btn-secondary" style="width: 100%; padding: 8px; font-size: 12px;" onclick="clearDiscount()">Retirer la remise</button>
+      </div>
+
+      <button class="acc-head" id="acc-head-supp" onclick="toggleAcc('supp')"><span>➕ Supplément</span><span class="acc-state" id="acc-state-supp">Aucun</span></button>
+      <div class="acc-body" id="acc-supp" style="display: none;">
+        <div class="chip-row" id="supp-presets"></div>
+        <div id="supp-list"></div>
+        <div class="chip-row" style="margin-top: 8px;">
+          <input type="text" id="supp-name" maxlength="40" placeholder="Nom (ex. œuf)" style="flex: 2; min-width: 0;">
+          <input type="number" id="supp-price" min="0" step="0.01" inputmode="decimal" placeholder="€" style="flex: 1; min-width: 0;">
+          <button class="chip" onclick="addCustomSupp()">Ajouter</button>
+        </div>
+        <label style="display: flex; align-items: center; gap: 6px; text-transform: none; font-size: 12px; margin: 0;"><input type="checkbox" id="supp-save" style="width: auto;"> Mémoriser dans mes suppléments</label>
+      </div>
+
+      <button class="acc-head" id="acc-head-notify" onclick="toggleAcc('notify')"><span>🔔 Prévenir quand prête</span><span class="acc-state" id="acc-state-notify">Non</span></button>
+      <div class="acc-body" id="acc-notify" style="display: none;">
+        <div class="chip-row">
+          <input type="text" id="notify-name" maxlength="30" placeholder="Prénom" oninput="updateNotifyCtx()" style="flex: 1; min-width: 0;">
+          <input type="tel" id="notify-phone" maxlength="20" placeholder="06 12 34 56 78" oninput="updateNotifyCtx()" style="flex: 1; min-width: 0;">
+        </div>
+        <p class="hint" style="margin: 0;">Après le paiement, un bouton permet d'envoyer le message « pizza prête » par SMS ou WhatsApp. Prénom et numéro sont effacés à la fin de la journée.</p>
+      </div>
+    </div>
+
+    <div class="payment-options">
+      <div class="payment-option" onclick="choosePayment('cb')">💳 Carte bancaire</div>
+      <div class="payment-option" onclick="choosePayment('cash')">💵 Espèces</div>
+      <div class="payment-option" onclick="choosePayment('check')">✓ Chèque</div>
+      <div class="payment-option" onclick="choosePayment('ticket')">🎫 Ticket R.</div>
+      <div class="payment-option" style="grid-column: 1 / -1;" onclick="choosePayment('transfer')">🏦 Virement</div>
+    </div>
+    <button class="btn-secondary" style="width: 100%;" onclick="closePaymentModal()">Annuler</button>
+  </div>
+</div>
+
+<script>
+/* qrcode-generator 1.4.4, Kazuhiko Arase, licence MIT */
+//---------------------------------------------------------------------
+//
+// QR Code Generator for JavaScript
+//
+// Copyright (c) 2009 Kazuhiko Arase
+//
+// URL: http://www.d-project.com/
+//
+// Licensed under the MIT license:
+//  http://www.opensource.org/licenses/mit-license.php
+//
+// The word 'QR Code' is registered trademark of
+// DENSO WAVE INCORPORATED
+//  http://www.denso-wave.com/qrcode/faqpatent-e.html
+//
+//---------------------------------------------------------------------
+
+var qrcode = function() {
+
+  //---------------------------------------------------------------------
+  // qrcode
+  //---------------------------------------------------------------------
+
+  /**
+   * qrcode
+   * @param typeNumber 1 to 40
+   * @param errorCorrectionLevel 'L','M','Q','H'
+   */
+  var qrcode = function(typeNumber, errorCorrectionLevel) {
+
+    var PAD0 = 0xEC;
+    var PAD1 = 0x11;
+
+    var _typeNumber = typeNumber;
+    var _errorCorrectionLevel = QRErrorCorrectionLevel[errorCorrectionLevel];
+    var _modules = null;
+    var _moduleCount = 0;
+    var _dataCache = null;
+    var _dataList = [];
+
+    var _this = {};
+
+    var makeImpl = function(test, maskPattern) {
+
+      _moduleCount = _typeNumber * 4 + 17;
+      _modules = function(moduleCount) {
+        var modules = new Array(moduleCount);
+        for (var row = 0; row < moduleCount; row += 1) {
+          modules[row] = new Array(moduleCount);
+          for (var col = 0; col < moduleCount; col += 1) {
+            modules[row][col] = null;
+          }
+        }
+        return modules;
+      }(_moduleCount);
+
+      setupPositionProbePattern(0, 0);
+      setupPositionProbePattern(_moduleCount - 7, 0);
+      setupPositionProbePattern(0, _moduleCount - 7);
+      setupPositionAdjustPattern();
+      setupTimingPattern();
+      setupTypeInfo(test, maskPattern);
+
+      if (_typeNumber >= 7) {
+        setupTypeNumber(test);
+      }
+
+      if (_dataCache == null) {
+        _dataCache = createData(_typeNumber, _errorCorrectionLevel, _dataList);
+      }
+
+      mapData(_dataCache, maskPattern);
+    };
+
+    var setupPositionProbePattern = function(row, col) {
+
+      for (var r = -1; r <= 7; r += 1) {
+
+        if (row + r <= -1 || _moduleCount <= row + r) continue;
+
+        for (var c = -1; c <= 7; c += 1) {
+
+          if (col + c <= -1 || _moduleCount <= col + c) continue;
+
+          if ( (0 <= r && r <= 6 && (c == 0 || c == 6) )
+              || (0 <= c && c <= 6 && (r == 0 || r == 6) )
+              || (2 <= r && r <= 4 && 2 <= c && c <= 4) ) {
+            _modules[row + r][col + c] = true;
+          } else {
+            _modules[row + r][col + c] = false;
+          }
+        }
+      }
+    };
+
+    var getBestMaskPattern = function() {
+
+      var minLostPoint = 0;
+      var pattern = 0;
+
+      for (var i = 0; i < 8; i += 1) {
+
+        makeImpl(true, i);
+
+        var lostPoint = QRUtil.getLostPoint(_this);
+
+        if (i == 0 || minLostPoint > lostPoint) {
+          minLostPoint = lostPoint;
+          pattern = i;
+        }
+      }
+
+      return pattern;
+    };
+
+    var setupTimingPattern = function() {
+
+      for (var r = 8; r < _moduleCount - 8; r += 1) {
+        if (_modules[r][6] != null) {
+          continue;
+        }
+        _modules[r][6] = (r % 2 == 0);
+      }
+
+      for (var c = 8; c < _moduleCount - 8; c += 1) {
+        if (_modules[6][c] != null) {
+          continue;
+        }
+        _modules[6][c] = (c % 2 == 0);
+      }
+    };
+
+    var setupPositionAdjustPattern = function() {
+
+      var pos = QRUtil.getPatternPosition(_typeNumber);
+
+      for (var i = 0; i < pos.length; i += 1) {
+
+        for (var j = 0; j < pos.length; j += 1) {
+
+          var row = pos[i];
+          var col = pos[j];
+
+          if (_modules[row][col] != null) {
+            continue;
+          }
+
+          for (var r = -2; r <= 2; r += 1) {
+
+            for (var c = -2; c <= 2; c += 1) {
+
+              if (r == -2 || r == 2 || c == -2 || c == 2
+                  || (r == 0 && c == 0) ) {
+                _modules[row + r][col + c] = true;
+              } else {
+                _modules[row + r][col + c] = false;
+              }
+            }
+          }
+        }
+      }
+    };
+
+    var setupTypeNumber = function(test) {
+
+      var bits = QRUtil.getBCHTypeNumber(_typeNumber);
+
+      for (var i = 0; i < 18; i += 1) {
+        var mod = (!test && ( (bits >> i) & 1) == 1);
+        _modules[Math.floor(i / 3)][i % 3 + _moduleCount - 8 - 3] = mod;
+      }
+
+      for (var i = 0; i < 18; i += 1) {
+        var mod = (!test && ( (bits >> i) & 1) == 1);
+        _modules[i % 3 + _moduleCount - 8 - 3][Math.floor(i / 3)] = mod;
+      }
+    };
+
+    var setupTypeInfo = function(test, maskPattern) {
+
+      var data = (_errorCorrectionLevel << 3) | maskPattern;
+      var bits = QRUtil.getBCHTypeInfo(data);
+
+      // vertical
+      for (var i = 0; i < 15; i += 1) {
+
+        var mod = (!test && ( (bits >> i) & 1) == 1);
+
+        if (i < 6) {
+          _modules[i][8] = mod;
+        } else if (i < 8) {
+          _modules[i + 1][8] = mod;
+        } else {
+          _modules[_moduleCount - 15 + i][8] = mod;
+        }
+      }
+
+      // horizontal
+      for (var i = 0; i < 15; i += 1) {
+
+        var mod = (!test && ( (bits >> i) & 1) == 1);
+
+        if (i < 8) {
+          _modules[8][_moduleCount - i - 1] = mod;
+        } else if (i < 9) {
+          _modules[8][15 - i - 1 + 1] = mod;
+        } else {
+          _modules[8][15 - i - 1] = mod;
+        }
+      }
+
+      // fixed module
+      _modules[_moduleCount - 8][8] = (!test);
+    };
+
+    var mapData = function(data, maskPattern) {
+
+      var inc = -1;
+      var row = _moduleCount - 1;
+      var bitIndex = 7;
+      var byteIndex = 0;
+      var maskFunc = QRUtil.getMaskFunction(maskPattern);
+
+      for (var col = _moduleCount - 1; col > 0; col -= 2) {
+
+        if (col == 6) col -= 1;
+
+        while (true) {
+
+          for (var c = 0; c < 2; c += 1) {
+
+            if (_modules[row][col - c] == null) {
+
+              var dark = false;
+
+              if (byteIndex < data.length) {
+                dark = ( ( (data[byteIndex] >>> bitIndex) & 1) == 1);
+              }
+
+              var mask = maskFunc(row, col - c);
+
+              if (mask) {
+                dark = !dark;
+              }
+
+              _modules[row][col - c] = dark;
+              bitIndex -= 1;
+
+              if (bitIndex == -1) {
+                byteIndex += 1;
+                bitIndex = 7;
+              }
+            }
+          }
+
+          row += inc;
+
+          if (row < 0 || _moduleCount <= row) {
+            row -= inc;
+            inc = -inc;
+            break;
+          }
+        }
+      }
+    };
+
+    var createBytes = function(buffer, rsBlocks) {
+
+      var offset = 0;
+
+      var maxDcCount = 0;
+      var maxEcCount = 0;
+
+      var dcdata = new Array(rsBlocks.length);
+      var ecdata = new Array(rsBlocks.length);
+
+      for (var r = 0; r < rsBlocks.length; r += 1) {
+
+        var dcCount = rsBlocks[r].dataCount;
+        var ecCount = rsBlocks[r].totalCount - dcCount;
+
+        maxDcCount = Math.max(maxDcCount, dcCount);
+        maxEcCount = Math.max(maxEcCount, ecCount);
+
+        dcdata[r] = new Array(dcCount);
+
+        for (var i = 0; i < dcdata[r].length; i += 1) {
+          dcdata[r][i] = 0xff & buffer.getBuffer()[i + offset];
+        }
+        offset += dcCount;
+
+        var rsPoly = QRUtil.getErrorCorrectPolynomial(ecCount);
+        var rawPoly = qrPolynomial(dcdata[r], rsPoly.getLength() - 1);
+
+        var modPoly = rawPoly.mod(rsPoly);
+        ecdata[r] = new Array(rsPoly.getLength() - 1);
+        for (var i = 0; i < ecdata[r].length; i += 1) {
+          var modIndex = i + modPoly.getLength() - ecdata[r].length;
+          ecdata[r][i] = (modIndex >= 0)? modPoly.getAt(modIndex) : 0;
+        }
+      }
+
+      var totalCodeCount = 0;
+      for (var i = 0; i < rsBlocks.length; i += 1) {
+        totalCodeCount += rsBlocks[i].totalCount;
+      }
+
+      var data = new Array(totalCodeCount);
+      var index = 0;
+
+      for (var i = 0; i < maxDcCount; i += 1) {
+        for (var r = 0; r < rsBlocks.length; r += 1) {
+          if (i < dcdata[r].length) {
+            data[index] = dcdata[r][i];
+            index += 1;
+          }
+        }
+      }
+
+      for (var i = 0; i < maxEcCount; i += 1) {
+        for (var r = 0; r < rsBlocks.length; r += 1) {
+          if (i < ecdata[r].length) {
+            data[index] = ecdata[r][i];
+            index += 1;
+          }
+        }
+      }
+
+      return data;
+    };
+
+    var createData = function(typeNumber, errorCorrectionLevel, dataList) {
+
+      var rsBlocks = QRRSBlock.getRSBlocks(typeNumber, errorCorrectionLevel);
+
+      var buffer = qrBitBuffer();
+
+      for (var i = 0; i < dataList.length; i += 1) {
+        var data = dataList[i];
+        buffer.put(data.getMode(), 4);
+        buffer.put(data.getLength(), QRUtil.getLengthInBits(data.getMode(), typeNumber) );
+        data.write(buffer);
+      }
+
+      // calc num max data.
+      var totalDataCount = 0;
+      for (var i = 0; i < rsBlocks.length; i += 1) {
+        totalDataCount += rsBlocks[i].dataCount;
+      }
+
+      if (buffer.getLengthInBits() > totalDataCount * 8) {
+        throw 'code length overflow. ('
+          + buffer.getLengthInBits()
+          + '>'
+          + totalDataCount * 8
+          + ')';
+      }
+
+      // end code
+      if (buffer.getLengthInBits() + 4 <= totalDataCount * 8) {
+        buffer.put(0, 4);
+      }
+
+      // padding
+      while (buffer.getLengthInBits() % 8 != 0) {
+        buffer.putBit(false);
+      }
+
+      // padding
+      while (true) {
+
+        if (buffer.getLengthInBits() >= totalDataCount * 8) {
+          break;
+        }
+        buffer.put(PAD0, 8);
+
+        if (buffer.getLengthInBits() >= totalDataCount * 8) {
+          break;
+        }
+        buffer.put(PAD1, 8);
+      }
+
+      return createBytes(buffer, rsBlocks);
+    };
+
+    _this.addData = function(data, mode) {
+
+      mode = mode || 'Byte';
+
+      var newData = null;
+
+      switch(mode) {
+      case 'Numeric' :
+        newData = qrNumber(data);
+        break;
+      case 'Alphanumeric' :
+        newData = qrAlphaNum(data);
+        break;
+      case 'Byte' :
+        newData = qr8BitByte(data);
+        break;
+      case 'Kanji' :
+        newData = qrKanji(data);
+        break;
+      default :
+        throw 'mode:' + mode;
+      }
+
+      _dataList.push(newData);
+      _dataCache = null;
+    };
+
+    _this.isDark = function(row, col) {
+      if (row < 0 || _moduleCount <= row || col < 0 || _moduleCount <= col) {
+        throw row + ',' + col;
+      }
+      return _modules[row][col];
+    };
+
+    _this.getModuleCount = function() {
+      return _moduleCount;
+    };
+
+    _this.make = function() {
+      if (_typeNumber < 1) {
+        var typeNumber = 1;
+
+        for (; typeNumber < 40; typeNumber++) {
+          var rsBlocks = QRRSBlock.getRSBlocks(typeNumber, _errorCorrectionLevel);
+          var buffer = qrBitBuffer();
+
+          for (var i = 0; i < _dataList.length; i++) {
+            var data = _dataList[i];
+            buffer.put(data.getMode(), 4);
+            buffer.put(data.getLength(), QRUtil.getLengthInBits(data.getMode(), typeNumber) );
+            data.write(buffer);
+          }
+
+          var totalDataCount = 0;
+          for (var i = 0; i < rsBlocks.length; i++) {
+            totalDataCount += rsBlocks[i].dataCount;
+          }
+
+          if (buffer.getLengthInBits() <= totalDataCount * 8) {
+            break;
+          }
+        }
+
+        _typeNumber = typeNumber;
+      }
+
+      makeImpl(false, getBestMaskPattern() );
+    };
+
+    _this.createTableTag = function(cellSize, margin) {
+
+      cellSize = cellSize || 2;
+      margin = (typeof margin == 'undefined')? cellSize * 4 : margin;
+
+      var qrHtml = '';
+
+      qrHtml += '<table style="';
+      qrHtml += ' border-width: 0px; border-style: none;';
+      qrHtml += ' border-collapse: collapse;';
+      qrHtml += ' padding: 0px; margin: ' + margin + 'px;';
+      qrHtml += '">';
+      qrHtml += '<tbody>';
+
+      for (var r = 0; r < _this.getModuleCount(); r += 1) {
+
+        qrHtml += '<tr>';
+
+        for (var c = 0; c < _this.getModuleCount(); c += 1) {
+          qrHtml += '<td style="';
+          qrHtml += ' border-width: 0px; border-style: none;';
+          qrHtml += ' border-collapse: collapse;';
+          qrHtml += ' padding: 0px; margin: 0px;';
+          qrHtml += ' width: ' + cellSize + 'px;';
+          qrHtml += ' height: ' + cellSize + 'px;';
+          qrHtml += ' background-color: ';
+          qrHtml += _this.isDark(r, c)? '#000000' : '#ffffff';
+          qrHtml += ';';
+          qrHtml += '"/>';
+        }
+
+        qrHtml += '</tr>';
+      }
+
+      qrHtml += '</tbody>';
+      qrHtml += '</table>';
+
+      return qrHtml;
+    };
+
+    _this.createSvgTag = function(cellSize, margin, alt, title) {
+
+      var opts = {};
+      if (typeof arguments[0] == 'object') {
+        // Called by options.
+        opts = arguments[0];
+        // overwrite cellSize and margin.
+        cellSize = opts.cellSize;
+        margin = opts.margin;
+        alt = opts.alt;
+        title = opts.title;
+      }
+
+      cellSize = cellSize || 2;
+      margin = (typeof margin == 'undefined')? cellSize * 4 : margin;
+
+      // Compose alt property surrogate
+      alt = (typeof alt === 'string') ? {text: alt} : alt || {};
+      alt.text = alt.text || null;
+      alt.id = (alt.text) ? alt.id || 'qrcode-description' : null;
+
+      // Compose title property surrogate
+      title = (typeof title === 'string') ? {text: title} : title || {};
+      title.text = title.text || null;
+      title.id = (title.text) ? title.id || 'qrcode-title' : null;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+      var c, mc, r, mr, qrSvg='', rect;
+
+      rect = 'l' + cellSize + ',0 0,' + cellSize +
+        ' -' + cellSize + ',0 0,-' + cellSize + 'z ';
+
+      qrSvg += '<svg version="1.1" xmlns="http://www.w3.org/2000/svg"';
+      qrSvg += !opts.scalable ? ' width="' + size + 'px" height="' + size + 'px"' : '';
+      qrSvg += ' viewBox="0 0 ' + size + ' ' + size + '" ';
+      qrSvg += ' preserveAspectRatio="xMinYMin meet"';
+      qrSvg += (title.text || alt.text) ? ' role="img" aria-labelledby="' +
+          escapeXml([title.id, alt.id].join(' ').trim() ) + '"' : '';
+      qrSvg += '>';
+      qrSvg += (title.text) ? '<title id="' + escapeXml(title.id) + '">' +
+          escapeXml(title.text) + '</title>' : '';
+      qrSvg += (alt.text) ? '<description id="' + escapeXml(alt.id) + '">' +
+          escapeXml(alt.text) + '</description>' : '';
+      qrSvg += '<rect width="100%" height="100%" fill="white" cx="0" cy="0"/>';
+      qrSvg += '<path d="';
+
+      for (r = 0; r < _this.getModuleCount(); r += 1) {
+        mr = r * cellSize + margin;
+        for (c = 0; c < _this.getModuleCount(); c += 1) {
+          if (_this.isDark(r, c) ) {
+            mc = c*cellSize+margin;
+            qrSvg += 'M' + mc + ',' + mr + rect;
+          }
+        }
+      }
+
+      qrSvg += '" stroke="transparent" fill="black"/>';
+      qrSvg += '</svg>';
+
+      return qrSvg;
+    };
+
+    _this.createDataURL = function(cellSize, margin) {
+
+      cellSize = cellSize || 2;
+      margin = (typeof margin == 'undefined')? cellSize * 4 : margin;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+      var min = margin;
+      var max = size - margin;
+
+      return createDataURL(size, size, function(x, y) {
+        if (min <= x && x < max && min <= y && y < max) {
+          var c = Math.floor( (x - min) / cellSize);
+          var r = Math.floor( (y - min) / cellSize);
+          return _this.isDark(r, c)? 0 : 1;
+        } else {
+          return 1;
+        }
+      } );
+    };
+
+    _this.createImgTag = function(cellSize, margin, alt) {
+
+      cellSize = cellSize || 2;
+      margin = (typeof margin == 'undefined')? cellSize * 4 : margin;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+
+      var img = '';
+      img += '<img';
+      img += '\u0020src="';
+      img += _this.createDataURL(cellSize, margin);
+      img += '"';
+      img += '\u0020width="';
+      img += size;
+      img += '"';
+      img += '\u0020height="';
+      img += size;
+      img += '"';
+      if (alt) {
+        img += '\u0020alt="';
+        img += escapeXml(alt);
+        img += '"';
+      }
+      img += '/>';
+
+      return img;
+    };
+
+    var escapeXml = function(s) {
+      var escaped = '';
+      for (var i = 0; i < s.length; i += 1) {
+        var c = s.charAt(i);
+        switch(c) {
+        case '<': escaped += '&lt;'; break;
+        case '>': escaped += '&gt;'; break;
+        case '&': escaped += '&amp;'; break;
+        case '"': escaped += '&quot;'; break;
+        default : escaped += c; break;
+        }
+      }
+      return escaped;
+    };
+
+    var _createHalfASCII = function(margin) {
+      var cellSize = 1;
+      margin = (typeof margin == 'undefined')? cellSize * 2 : margin;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+      var min = margin;
+      var max = size - margin;
+
+      var y, x, r1, r2, p;
+
+      var blocks = {
+        '██': '█',
+        '█ ': '▀',
+        ' █': '▄',
+        '  ': ' '
+      };
+
+      var blocksLastLineNoMargin = {
+        '██': '▀',
+        '█ ': '▀',
+        ' █': ' ',
+        '  ': ' '
+      };
+
+      var ascii = '';
+      for (y = 0; y < size; y += 2) {
+        r1 = Math.floor((y - min) / cellSize);
+        r2 = Math.floor((y + 1 - min) / cellSize);
+        for (x = 0; x < size; x += 1) {
+          p = '█';
+
+          if (min <= x && x < max && min <= y && y < max && _this.isDark(r1, Math.floor((x - min) / cellSize))) {
+            p = ' ';
+          }
+
+          if (min <= x && x < max && min <= y+1 && y+1 < max && _this.isDark(r2, Math.floor((x - min) / cellSize))) {
+            p += ' ';
+          }
+          else {
+            p += '█';
+          }
+
+          // Output 2 characters per pixel, to create full square. 1 character per pixels gives only half width of square.
+          ascii += (margin < 1 && y+1 >= max) ? blocksLastLineNoMargin[p] : blocks[p];
+        }
+
+        ascii += '\n';
+      }
+
+      if (size % 2 && margin > 0) {
+        return ascii.substring(0, ascii.length - size - 1) + Array(size+1).join('▀');
+      }
+
+      return ascii.substring(0, ascii.length-1);
+    };
+
+    _this.createASCII = function(cellSize, margin) {
+      cellSize = cellSize || 1;
+
+      if (cellSize < 2) {
+        return _createHalfASCII(margin);
+      }
+
+      cellSize -= 1;
+      margin = (typeof margin == 'undefined')? cellSize * 2 : margin;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+      var min = margin;
+      var max = size - margin;
+
+      var y, x, r, p;
+
+      var white = Array(cellSize+1).join('██');
+      var black = Array(cellSize+1).join('  ');
+
+      var ascii = '';
+      var line = '';
+      for (y = 0; y < size; y += 1) {
+        r = Math.floor( (y - min) / cellSize);
+        line = '';
+        for (x = 0; x < size; x += 1) {
+          p = 1;
+
+          if (min <= x && x < max && min <= y && y < max && _this.isDark(r, Math.floor((x - min) / cellSize))) {
+            p = 0;
+          }
+
+          // Output 2 characters per pixel, to create full square. 1 character per pixels gives only half width of square.
+          line += p ? white : black;
+        }
+
+        for (r = 0; r < cellSize; r += 1) {
+          ascii += line + '\n';
+        }
+      }
+
+      return ascii.substring(0, ascii.length-1);
+    };
+
+    _this.renderTo2dContext = function(context, cellSize) {
+      cellSize = cellSize || 2;
+      var length = _this.getModuleCount();
+      for (var row = 0; row < length; row++) {
+        for (var col = 0; col < length; col++) {
+          context.fillStyle = _this.isDark(row, col) ? 'black' : 'white';
+          context.fillRect(row * cellSize, col * cellSize, cellSize, cellSize);
+        }
+      }
+    }
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qrcode.stringToBytes
+  //---------------------------------------------------------------------
+
+  qrcode.stringToBytesFuncs = {
+    'default' : function(s) {
+      var bytes = [];
+      for (var i = 0; i < s.length; i += 1) {
+        var c = s.charCodeAt(i);
+        bytes.push(c & 0xff);
+      }
+      return bytes;
+    }
+  };
+
+  qrcode.stringToBytes = qrcode.stringToBytesFuncs['default'];
+
+  //---------------------------------------------------------------------
+  // qrcode.createStringToBytes
+  //---------------------------------------------------------------------
+
+  /**
+   * @param unicodeData base64 string of byte array.
+   * [16bit Unicode],[16bit Bytes], ...
+   * @param numChars
+   */
+  qrcode.createStringToBytes = function(unicodeData, numChars) {
+
+    // create conversion map.
+
+    var unicodeMap = function() {
+
+      var bin = base64DecodeInputStream(unicodeData);
+      var read = function() {
+        var b = bin.read();
+        if (b == -1) throw 'eof';
+        return b;
+      };
+
+      var count = 0;
+      var unicodeMap = {};
+      while (true) {
+        var b0 = bin.read();
+        if (b0 == -1) break;
+        var b1 = read();
+        var b2 = read();
+        var b3 = read();
+        var k = String.fromCharCode( (b0 << 8) | b1);
+        var v = (b2 << 8) | b3;
+        unicodeMap[k] = v;
+        count += 1;
+      }
+      if (count != numChars) {
+        throw count + ' != ' + numChars;
+      }
+
+      return unicodeMap;
+    }();
+
+    var unknownChar = '?'.charCodeAt(0);
+
+    return function(s) {
+      var bytes = [];
+      for (var i = 0; i < s.length; i += 1) {
+        var c = s.charCodeAt(i);
+        if (c < 128) {
+          bytes.push(c);
+        } else {
+          var b = unicodeMap[s.charAt(i)];
+          if (typeof b == 'number') {
+            if ( (b & 0xff) == b) {
+              // 1byte
+              bytes.push(b);
+            } else {
+              // 2bytes
+              bytes.push(b >>> 8);
+              bytes.push(b & 0xff);
+            }
+          } else {
+            bytes.push(unknownChar);
+          }
+        }
+      }
+      return bytes;
+    };
+  };
+
+  //---------------------------------------------------------------------
+  // QRMode
+  //---------------------------------------------------------------------
+
+  var QRMode = {
+    MODE_NUMBER :    1 << 0,
+    MODE_ALPHA_NUM : 1 << 1,
+    MODE_8BIT_BYTE : 1 << 2,
+    MODE_KANJI :     1 << 3
+  };
+
+  //---------------------------------------------------------------------
+  // QRErrorCorrectionLevel
+  //---------------------------------------------------------------------
+
+  var QRErrorCorrectionLevel = {
+    L : 1,
+    M : 0,
+    Q : 3,
+    H : 2
+  };
+
+  //---------------------------------------------------------------------
+  // QRMaskPattern
+  //---------------------------------------------------------------------
+
+  var QRMaskPattern = {
+    PATTERN000 : 0,
+    PATTERN001 : 1,
+    PATTERN010 : 2,
+    PATTERN011 : 3,
+    PATTERN100 : 4,
+    PATTERN101 : 5,
+    PATTERN110 : 6,
+    PATTERN111 : 7
+  };
+
+  //---------------------------------------------------------------------
+  // QRUtil
+  //---------------------------------------------------------------------
+
+  var QRUtil = function() {
+
+    var PATTERN_POSITION_TABLE = [
+      [],
+      [6, 18],
+      [6, 22],
+      [6, 26],
+      [6, 30],
+      [6, 34],
+      [6, 22, 38],
+      [6, 24, 42],
+      [6, 26, 46],
+      [6, 28, 50],
+      [6, 30, 54],
+      [6, 32, 58],
+      [6, 34, 62],
+      [6, 26, 46, 66],
+      [6, 26, 48, 70],
+      [6, 26, 50, 74],
+      [6, 30, 54, 78],
+      [6, 30, 56, 82],
+      [6, 30, 58, 86],
+      [6, 34, 62, 90],
+      [6, 28, 50, 72, 94],
+      [6, 26, 50, 74, 98],
+      [6, 30, 54, 78, 102],
+      [6, 28, 54, 80, 106],
+      [6, 32, 58, 84, 110],
+      [6, 30, 58, 86, 114],
+      [6, 34, 62, 90, 118],
+      [6, 26, 50, 74, 98, 122],
+      [6, 30, 54, 78, 102, 126],
+      [6, 26, 52, 78, 104, 130],
+      [6, 30, 56, 82, 108, 134],
+      [6, 34, 60, 86, 112, 138],
+      [6, 30, 58, 86, 114, 142],
+      [6, 34, 62, 90, 118, 146],
+      [6, 30, 54, 78, 102, 126, 150],
+      [6, 24, 50, 76, 102, 128, 154],
+      [6, 28, 54, 80, 106, 132, 158],
+      [6, 32, 58, 84, 110, 136, 162],
+      [6, 26, 54, 82, 110, 138, 166],
+      [6, 30, 58, 86, 114, 142, 170]
+    ];
+    var G15 = (1 << 10) | (1 << 8) | (1 << 5) | (1 << 4) | (1 << 2) | (1 << 1) | (1 << 0);
+    var G18 = (1 << 12) | (1 << 11) | (1 << 10) | (1 << 9) | (1 << 8) | (1 << 5) | (1 << 2) | (1 << 0);
+    var G15_MASK = (1 << 14) | (1 << 12) | (1 << 10) | (1 << 4) | (1 << 1);
+
+    var _this = {};
+
+    var getBCHDigit = function(data) {
+      var digit = 0;
+      while (data != 0) {
+        digit += 1;
+        data >>>= 1;
+      }
+      return digit;
+    };
+
+    _this.getBCHTypeInfo = function(data) {
+      var d = data << 10;
+      while (getBCHDigit(d) - getBCHDigit(G15) >= 0) {
+        d ^= (G15 << (getBCHDigit(d) - getBCHDigit(G15) ) );
+      }
+      return ( (data << 10) | d) ^ G15_MASK;
+    };
+
+    _this.getBCHTypeNumber = function(data) {
+      var d = data << 12;
+      while (getBCHDigit(d) - getBCHDigit(G18) >= 0) {
+        d ^= (G18 << (getBCHDigit(d) - getBCHDigit(G18) ) );
+      }
+      return (data << 12) | d;
+    };
+
+    _this.getPatternPosition = function(typeNumber) {
+      return PATTERN_POSITION_TABLE[typeNumber - 1];
+    };
+
+    _this.getMaskFunction = function(maskPattern) {
+
+      switch (maskPattern) {
+
+      case QRMaskPattern.PATTERN000 :
+        return function(i, j) { return (i + j) % 2 == 0; };
+      case QRMaskPattern.PATTERN001 :
+        return function(i, j) { return i % 2 == 0; };
+      case QRMaskPattern.PATTERN010 :
+        return function(i, j) { return j % 3 == 0; };
+      case QRMaskPattern.PATTERN011 :
+        return function(i, j) { return (i + j) % 3 == 0; };
+      case QRMaskPattern.PATTERN100 :
+        return function(i, j) { return (Math.floor(i / 2) + Math.floor(j / 3) ) % 2 == 0; };
+      case QRMaskPattern.PATTERN101 :
+        return function(i, j) { return (i * j) % 2 + (i * j) % 3 == 0; };
+      case QRMaskPattern.PATTERN110 :
+        return function(i, j) { return ( (i * j) % 2 + (i * j) % 3) % 2 == 0; };
+      case QRMaskPattern.PATTERN111 :
+        return function(i, j) { return ( (i * j) % 3 + (i + j) % 2) % 2 == 0; };
+
+      default :
+        throw 'bad maskPattern:' + maskPattern;
+      }
+    };
+
+    _this.getErrorCorrectPolynomial = function(errorCorrectLength) {
+      var a = qrPolynomial([1], 0);
+      for (var i = 0; i < errorCorrectLength; i += 1) {
+        a = a.multiply(qrPolynomial([1, QRMath.gexp(i)], 0) );
+      }
+      return a;
+    };
+
+    _this.getLengthInBits = function(mode, type) {
+
+      if (1 <= type && type < 10) {
+
+        // 1 - 9
+
+        switch(mode) {
+        case QRMode.MODE_NUMBER    : return 10;
+        case QRMode.MODE_ALPHA_NUM : return 9;
+        case QRMode.MODE_8BIT_BYTE : return 8;
+        case QRMode.MODE_KANJI     : return 8;
+        default :
+          throw 'mode:' + mode;
+        }
+
+      } else if (type < 27) {
+
+        // 10 - 26
+
+        switch(mode) {
+        case QRMode.MODE_NUMBER    : return 12;
+        case QRMode.MODE_ALPHA_NUM : return 11;
+        case QRMode.MODE_8BIT_BYTE : return 16;
+        case QRMode.MODE_KANJI     : return 10;
+        default :
+          throw 'mode:' + mode;
+        }
+
+      } else if (type < 41) {
+
+        // 27 - 40
+
+        switch(mode) {
+        case QRMode.MODE_NUMBER    : return 14;
+        case QRMode.MODE_ALPHA_NUM : return 13;
+        case QRMode.MODE_8BIT_BYTE : return 16;
+        case QRMode.MODE_KANJI     : return 12;
+        default :
+          throw 'mode:' + mode;
+        }
+
+      } else {
+        throw 'type:' + type;
+      }
+    };
+
+    _this.getLostPoint = function(qrcode) {
+
+      var moduleCount = qrcode.getModuleCount();
+
+      var lostPoint = 0;
+
+      // LEVEL1
+
+      for (var row = 0; row < moduleCount; row += 1) {
+        for (var col = 0; col < moduleCount; col += 1) {
+
+          var sameCount = 0;
+          var dark = qrcode.isDark(row, col);
+
+          for (var r = -1; r <= 1; r += 1) {
+
+            if (row + r < 0 || moduleCount <= row + r) {
+              continue;
+            }
+
+            for (var c = -1; c <= 1; c += 1) {
+
+              if (col + c < 0 || moduleCount <= col + c) {
+                continue;
+              }
+
+              if (r == 0 && c == 0) {
+                continue;
+              }
+
+              if (dark == qrcode.isDark(row + r, col + c) ) {
+                sameCount += 1;
+              }
+            }
+          }
+
+          if (sameCount > 5) {
+            lostPoint += (3 + sameCount - 5);
+          }
+        }
+      };
+
+      // LEVEL2
+
+      for (var row = 0; row < moduleCount - 1; row += 1) {
+        for (var col = 0; col < moduleCount - 1; col += 1) {
+          var count = 0;
+          if (qrcode.isDark(row, col) ) count += 1;
+          if (qrcode.isDark(row + 1, col) ) count += 1;
+          if (qrcode.isDark(row, col + 1) ) count += 1;
+          if (qrcode.isDark(row + 1, col + 1) ) count += 1;
+          if (count == 0 || count == 4) {
+            lostPoint += 3;
+          }
+        }
+      }
+
+      // LEVEL3
+
+      for (var row = 0; row < moduleCount; row += 1) {
+        for (var col = 0; col < moduleCount - 6; col += 1) {
+          if (qrcode.isDark(row, col)
+              && !qrcode.isDark(row, col + 1)
+              &&  qrcode.isDark(row, col + 2)
+              &&  qrcode.isDark(row, col + 3)
+              &&  qrcode.isDark(row, col + 4)
+              && !qrcode.isDark(row, col + 5)
+              &&  qrcode.isDark(row, col + 6) ) {
+            lostPoint += 40;
+          }
+        }
+      }
+
+      for (var col = 0; col < moduleCount; col += 1) {
+        for (var row = 0; row < moduleCount - 6; row += 1) {
+          if (qrcode.isDark(row, col)
+              && !qrcode.isDark(row + 1, col)
+              &&  qrcode.isDark(row + 2, col)
+              &&  qrcode.isDark(row + 3, col)
+              &&  qrcode.isDark(row + 4, col)
+              && !qrcode.isDark(row + 5, col)
+              &&  qrcode.isDark(row + 6, col) ) {
+            lostPoint += 40;
+          }
+        }
+      }
+
+      // LEVEL4
+
+      var darkCount = 0;
+
+      for (var col = 0; col < moduleCount; col += 1) {
+        for (var row = 0; row < moduleCount; row += 1) {
+          if (qrcode.isDark(row, col) ) {
+            darkCount += 1;
+          }
+        }
+      }
+
+      var ratio = Math.abs(100 * darkCount / moduleCount / moduleCount - 50) / 5;
+      lostPoint += ratio * 10;
+
+      return lostPoint;
+    };
+
+    return _this;
+  }();
+
+  //---------------------------------------------------------------------
+  // QRMath
+  //---------------------------------------------------------------------
+
+  var QRMath = function() {
+
+    var EXP_TABLE = new Array(256);
+    var LOG_TABLE = new Array(256);
+
+    // initialize tables
+    for (var i = 0; i < 8; i += 1) {
+      EXP_TABLE[i] = 1 << i;
+    }
+    for (var i = 8; i < 256; i += 1) {
+      EXP_TABLE[i] = EXP_TABLE[i - 4]
+        ^ EXP_TABLE[i - 5]
+        ^ EXP_TABLE[i - 6]
+        ^ EXP_TABLE[i - 8];
+    }
+    for (var i = 0; i < 255; i += 1) {
+      LOG_TABLE[EXP_TABLE[i] ] = i;
+    }
+
+    var _this = {};
+
+    _this.glog = function(n) {
+
+      if (n < 1) {
+        throw 'glog(' + n + ')';
+      }
+
+      return LOG_TABLE[n];
+    };
+
+    _this.gexp = function(n) {
+
+      while (n < 0) {
+        n += 255;
+      }
+
+      while (n >= 256) {
+        n -= 255;
+      }
+
+      return EXP_TABLE[n];
+    };
+
+    return _this;
+  }();
+
+  //---------------------------------------------------------------------
+  // qrPolynomial
+  //---------------------------------------------------------------------
+
+  function qrPolynomial(num, shift) {
+
+    if (typeof num.length == 'undefined') {
+      throw num.length + '/' + shift;
+    }
+
+    var _num = function() {
+      var offset = 0;
+      while (offset < num.length && num[offset] == 0) {
+        offset += 1;
+      }
+      var _num = new Array(num.length - offset + shift);
+      for (var i = 0; i < num.length - offset; i += 1) {
+        _num[i] = num[i + offset];
+      }
+      return _num;
+    }();
+
+    var _this = {};
+
+    _this.getAt = function(index) {
+      return _num[index];
+    };
+
+    _this.getLength = function() {
+      return _num.length;
+    };
+
+    _this.multiply = function(e) {
+
+      var num = new Array(_this.getLength() + e.getLength() - 1);
+
+      for (var i = 0; i < _this.getLength(); i += 1) {
+        for (var j = 0; j < e.getLength(); j += 1) {
+          num[i + j] ^= QRMath.gexp(QRMath.glog(_this.getAt(i) ) + QRMath.glog(e.getAt(j) ) );
+        }
+      }
+
+      return qrPolynomial(num, 0);
+    };
+
+    _this.mod = function(e) {
+
+      if (_this.getLength() - e.getLength() < 0) {
+        return _this;
+      }
+
+      var ratio = QRMath.glog(_this.getAt(0) ) - QRMath.glog(e.getAt(0) );
+
+      var num = new Array(_this.getLength() );
+      for (var i = 0; i < _this.getLength(); i += 1) {
+        num[i] = _this.getAt(i);
+      }
+
+      for (var i = 0; i < e.getLength(); i += 1) {
+        num[i] ^= QRMath.gexp(QRMath.glog(e.getAt(i) ) + ratio);
+      }
+
+      // recursive call
+      return qrPolynomial(num, 0).mod(e);
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // QRRSBlock
+  //---------------------------------------------------------------------
+
+  var QRRSBlock = function() {
+
+    var RS_BLOCK_TABLE = [
+
+      // L
+      // M
+      // Q
+      // H
+
+      // 1
+      [1, 26, 19],
+      [1, 26, 16],
+      [1, 26, 13],
+      [1, 26, 9],
+
+      // 2
+      [1, 44, 34],
+      [1, 44, 28],
+      [1, 44, 22],
+      [1, 44, 16],
+
+      // 3
+      [1, 70, 55],
+      [1, 70, 44],
+      [2, 35, 17],
+      [2, 35, 13],
+
+      // 4
+      [1, 100, 80],
+      [2, 50, 32],
+      [2, 50, 24],
+      [4, 25, 9],
+
+      // 5
+      [1, 134, 108],
+      [2, 67, 43],
+      [2, 33, 15, 2, 34, 16],
+      [2, 33, 11, 2, 34, 12],
+
+      // 6
+      [2, 86, 68],
+      [4, 43, 27],
+      [4, 43, 19],
+      [4, 43, 15],
+
+      // 7
+      [2, 98, 78],
+      [4, 49, 31],
+      [2, 32, 14, 4, 33, 15],
+      [4, 39, 13, 1, 40, 14],
+
+      // 8
+      [2, 121, 97],
+      [2, 60, 38, 2, 61, 39],
+      [4, 40, 18, 2, 41, 19],
+      [4, 40, 14, 2, 41, 15],
+
+      // 9
+      [2, 146, 116],
+      [3, 58, 36, 2, 59, 37],
+      [4, 36, 16, 4, 37, 17],
+      [4, 36, 12, 4, 37, 13],
+
+      // 10
+      [2, 86, 68, 2, 87, 69],
+      [4, 69, 43, 1, 70, 44],
+      [6, 43, 19, 2, 44, 20],
+      [6, 43, 15, 2, 44, 16],
+
+      // 11
+      [4, 101, 81],
+      [1, 80, 50, 4, 81, 51],
+      [4, 50, 22, 4, 51, 23],
+      [3, 36, 12, 8, 37, 13],
+
+      // 12
+      [2, 116, 92, 2, 117, 93],
+      [6, 58, 36, 2, 59, 37],
+      [4, 46, 20, 6, 47, 21],
+      [7, 42, 14, 4, 43, 15],
+
+      // 13
+      [4, 133, 107],
+      [8, 59, 37, 1, 60, 38],
+      [8, 44, 20, 4, 45, 21],
+      [12, 33, 11, 4, 34, 12],
+
+      // 14
+      [3, 145, 115, 1, 146, 116],
+      [4, 64, 40, 5, 65, 41],
+      [11, 36, 16, 5, 37, 17],
+      [11, 36, 12, 5, 37, 13],
+
+      // 15
+      [5, 109, 87, 1, 110, 88],
+      [5, 65, 41, 5, 66, 42],
+      [5, 54, 24, 7, 55, 25],
+      [11, 36, 12, 7, 37, 13],
+
+      // 16
+      [5, 122, 98, 1, 123, 99],
+      [7, 73, 45, 3, 74, 46],
+      [15, 43, 19, 2, 44, 20],
+      [3, 45, 15, 13, 46, 16],
+
+      // 17
+      [1, 135, 107, 5, 136, 108],
+      [10, 74, 46, 1, 75, 47],
+      [1, 50, 22, 15, 51, 23],
+      [2, 42, 14, 17, 43, 15],
+
+      // 18
+      [5, 150, 120, 1, 151, 121],
+      [9, 69, 43, 4, 70, 44],
+      [17, 50, 22, 1, 51, 23],
+      [2, 42, 14, 19, 43, 15],
+
+      // 19
+      [3, 141, 113, 4, 142, 114],
+      [3, 70, 44, 11, 71, 45],
+      [17, 47, 21, 4, 48, 22],
+      [9, 39, 13, 16, 40, 14],
+
+      // 20
+      [3, 135, 107, 5, 136, 108],
+      [3, 67, 41, 13, 68, 42],
+      [15, 54, 24, 5, 55, 25],
+      [15, 43, 15, 10, 44, 16],
+
+      // 21
+      [4, 144, 116, 4, 145, 117],
+      [17, 68, 42],
+      [17, 50, 22, 6, 51, 23],
+      [19, 46, 16, 6, 47, 17],
+
+      // 22
+      [2, 139, 111, 7, 140, 112],
+      [17, 74, 46],
+      [7, 54, 24, 16, 55, 25],
+      [34, 37, 13],
+
+      // 23
+      [4, 151, 121, 5, 152, 122],
+      [4, 75, 47, 14, 76, 48],
+      [11, 54, 24, 14, 55, 25],
+      [16, 45, 15, 14, 46, 16],
+
+      // 24
+      [6, 147, 117, 4, 148, 118],
+      [6, 73, 45, 14, 74, 46],
+      [11, 54, 24, 16, 55, 25],
+      [30, 46, 16, 2, 47, 17],
+
+      // 25
+      [8, 132, 106, 4, 133, 107],
+      [8, 75, 47, 13, 76, 48],
+      [7, 54, 24, 22, 55, 25],
+      [22, 45, 15, 13, 46, 16],
+
+      // 26
+      [10, 142, 114, 2, 143, 115],
+      [19, 74, 46, 4, 75, 47],
+      [28, 50, 22, 6, 51, 23],
+      [33, 46, 16, 4, 47, 17],
+
+      // 27
+      [8, 152, 122, 4, 153, 123],
+      [22, 73, 45, 3, 74, 46],
+      [8, 53, 23, 26, 54, 24],
+      [12, 45, 15, 28, 46, 16],
+
+      // 28
+      [3, 147, 117, 10, 148, 118],
+      [3, 73, 45, 23, 74, 46],
+      [4, 54, 24, 31, 55, 25],
+      [11, 45, 15, 31, 46, 16],
+
+      // 29
+      [7, 146, 116, 7, 147, 117],
+      [21, 73, 45, 7, 74, 46],
+      [1, 53, 23, 37, 54, 24],
+      [19, 45, 15, 26, 46, 16],
+
+      // 30
+      [5, 145, 115, 10, 146, 116],
+      [19, 75, 47, 10, 76, 48],
+      [15, 54, 24, 25, 55, 25],
+      [23, 45, 15, 25, 46, 16],
+
+      // 31
+      [13, 145, 115, 3, 146, 116],
+      [2, 74, 46, 29, 75, 47],
+      [42, 54, 24, 1, 55, 25],
+      [23, 45, 15, 28, 46, 16],
+
+      // 32
+      [17, 145, 115],
+      [10, 74, 46, 23, 75, 47],
+      [10, 54, 24, 35, 55, 25],
+      [19, 45, 15, 35, 46, 16],
+
+      // 33
+      [17, 145, 115, 1, 146, 116],
+      [14, 74, 46, 21, 75, 47],
+      [29, 54, 24, 19, 55, 25],
+      [11, 45, 15, 46, 46, 16],
+
+      // 34
+      [13, 145, 115, 6, 146, 116],
+      [14, 74, 46, 23, 75, 47],
+      [44, 54, 24, 7, 55, 25],
+      [59, 46, 16, 1, 47, 17],
+
+      // 35
+      [12, 151, 121, 7, 152, 122],
+      [12, 75, 47, 26, 76, 48],
+      [39, 54, 24, 14, 55, 25],
+      [22, 45, 15, 41, 46, 16],
+
+      // 36
+      [6, 151, 121, 14, 152, 122],
+      [6, 75, 47, 34, 76, 48],
+      [46, 54, 24, 10, 55, 25],
+      [2, 45, 15, 64, 46, 16],
+
+      // 37
+      [17, 152, 122, 4, 153, 123],
+      [29, 74, 46, 14, 75, 47],
+      [49, 54, 24, 10, 55, 25],
+      [24, 45, 15, 46, 46, 16],
+
+      // 38
+      [4, 152, 122, 18, 153, 123],
+      [13, 74, 46, 32, 75, 47],
+      [48, 54, 24, 14, 55, 25],
+      [42, 45, 15, 32, 46, 16],
+
+      // 39
+      [20, 147, 117, 4, 148, 118],
+      [40, 75, 47, 7, 76, 48],
+      [43, 54, 24, 22, 55, 25],
+      [10, 45, 15, 67, 46, 16],
+
+      // 40
+      [19, 148, 118, 6, 149, 119],
+      [18, 75, 47, 31, 76, 48],
+      [34, 54, 24, 34, 55, 25],
+      [20, 45, 15, 61, 46, 16]
+    ];
+
+    var qrRSBlock = function(totalCount, dataCount) {
+      var _this = {};
+      _this.totalCount = totalCount;
+      _this.dataCount = dataCount;
+      return _this;
+    };
+
+    var _this = {};
+
+    var getRsBlockTable = function(typeNumber, errorCorrectionLevel) {
+
+      switch(errorCorrectionLevel) {
+      case QRErrorCorrectionLevel.L :
+        return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 0];
+      case QRErrorCorrectionLevel.M :
+        return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 1];
+      case QRErrorCorrectionLevel.Q :
+        return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 2];
+      case QRErrorCorrectionLevel.H :
+        return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 3];
+      default :
+        return undefined;
+      }
+    };
+
+    _this.getRSBlocks = function(typeNumber, errorCorrectionLevel) {
+
+      var rsBlock = getRsBlockTable(typeNumber, errorCorrectionLevel);
+
+      if (typeof rsBlock == 'undefined') {
+        throw 'bad rs block @ typeNumber:' + typeNumber +
+            '/errorCorrectionLevel:' + errorCorrectionLevel;
+      }
+
+      var length = rsBlock.length / 3;
+
+      var list = [];
+
+      for (var i = 0; i < length; i += 1) {
+
+        var count = rsBlock[i * 3 + 0];
+        var totalCount = rsBlock[i * 3 + 1];
+        var dataCount = rsBlock[i * 3 + 2];
+
+        for (var j = 0; j < count; j += 1) {
+          list.push(qrRSBlock(totalCount, dataCount) );
+        }
+      }
+
+      return list;
+    };
+
+    return _this;
+  }();
+
+  //---------------------------------------------------------------------
+  // qrBitBuffer
+  //---------------------------------------------------------------------
+
+  var qrBitBuffer = function() {
+
+    var _buffer = [];
+    var _length = 0;
+
+    var _this = {};
+
+    _this.getBuffer = function() {
+      return _buffer;
+    };
+
+    _this.getAt = function(index) {
+      var bufIndex = Math.floor(index / 8);
+      return ( (_buffer[bufIndex] >>> (7 - index % 8) ) & 1) == 1;
+    };
+
+    _this.put = function(num, length) {
+      for (var i = 0; i < length; i += 1) {
+        _this.putBit( ( (num >>> (length - i - 1) ) & 1) == 1);
+      }
+    };
+
+    _this.getLengthInBits = function() {
+      return _length;
+    };
+
+    _this.putBit = function(bit) {
+
+      var bufIndex = Math.floor(_length / 8);
+      if (_buffer.length <= bufIndex) {
+        _buffer.push(0);
+      }
+
+      if (bit) {
+        _buffer[bufIndex] |= (0x80 >>> (_length % 8) );
+      }
+
+      _length += 1;
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qrNumber
+  //---------------------------------------------------------------------
+
+  var qrNumber = function(data) {
+
+    var _mode = QRMode.MODE_NUMBER;
+    var _data = data;
+
+    var _this = {};
+
+    _this.getMode = function() {
+      return _mode;
+    };
+
+    _this.getLength = function(buffer) {
+      return _data.length;
+    };
+
+    _this.write = function(buffer) {
+
+      var data = _data;
+
+      var i = 0;
+
+      while (i + 2 < data.length) {
+        buffer.put(strToNum(data.substring(i, i + 3) ), 10);
+        i += 3;
+      }
+
+      if (i < data.length) {
+        if (data.length - i == 1) {
+          buffer.put(strToNum(data.substring(i, i + 1) ), 4);
+        } else if (data.length - i == 2) {
+          buffer.put(strToNum(data.substring(i, i + 2) ), 7);
+        }
+      }
+    };
+
+    var strToNum = function(s) {
+      var num = 0;
+      for (var i = 0; i < s.length; i += 1) {
+        num = num * 10 + chatToNum(s.charAt(i) );
+      }
+      return num;
+    };
+
+    var chatToNum = function(c) {
+      if ('0' <= c && c <= '9') {
+        return c.charCodeAt(0) - '0'.charCodeAt(0);
+      }
+      throw 'illegal char :' + c;
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qrAlphaNum
+  //---------------------------------------------------------------------
+
+  var qrAlphaNum = function(data) {
+
+    var _mode = QRMode.MODE_ALPHA_NUM;
+    var _data = data;
+
+    var _this = {};
+
+    _this.getMode = function() {
+      return _mode;
+    };
+
+    _this.getLength = function(buffer) {
+      return _data.length;
+    };
+
+    _this.write = function(buffer) {
+
+      var s = _data;
+
+      var i = 0;
+
+      while (i + 1 < s.length) {
+        buffer.put(
+          getCode(s.charAt(i) ) * 45 +
+          getCode(s.charAt(i + 1) ), 11);
+        i += 2;
+      }
+
+      if (i < s.length) {
+        buffer.put(getCode(s.charAt(i) ), 6);
+      }
+    };
+
+    var getCode = function(c) {
+
+      if ('0' <= c && c <= '9') {
+        return c.charCodeAt(0) - '0'.charCodeAt(0);
+      } else if ('A' <= c && c <= 'Z') {
+        return c.charCodeAt(0) - 'A'.charCodeAt(0) + 10;
+      } else {
+        switch (c) {
+        case ' ' : return 36;
+        case '$' : return 37;
+        case '%' : return 38;
+        case '*' : return 39;
+        case '+' : return 40;
+        case '-' : return 41;
+        case '.' : return 42;
+        case '/' : return 43;
+        case ':' : return 44;
+        default :
+          throw 'illegal char :' + c;
+        }
+      }
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qr8BitByte
+  //---------------------------------------------------------------------
+
+  var qr8BitByte = function(data) {
+
+    var _mode = QRMode.MODE_8BIT_BYTE;
+    var _data = data;
+    var _bytes = qrcode.stringToBytes(data);
+
+    var _this = {};
+
+    _this.getMode = function() {
+      return _mode;
+    };
+
+    _this.getLength = function(buffer) {
+      return _bytes.length;
+    };
+
+    _this.write = function(buffer) {
+      for (var i = 0; i < _bytes.length; i += 1) {
+        buffer.put(_bytes[i], 8);
+      }
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qrKanji
+  //---------------------------------------------------------------------
+
+  var qrKanji = function(data) {
+
+    var _mode = QRMode.MODE_KANJI;
+    var _data = data;
+
+    var stringToBytes = qrcode.stringToBytesFuncs['SJIS'];
+    if (!stringToBytes) {
+      throw 'sjis not supported.';
+    }
+    !function(c, code) {
+      // self test for sjis support.
+      var test = stringToBytes(c);
+      if (test.length != 2 || ( (test[0] << 8) | test[1]) != code) {
+        throw 'sjis not supported.';
+      }
+    }('\u53cb', 0x9746);
+
+    var _bytes = stringToBytes(data);
+
+    var _this = {};
+
+    _this.getMode = function() {
+      return _mode;
+    };
+
+    _this.getLength = function(buffer) {
+      return ~~(_bytes.length / 2);
+    };
+
+    _this.write = function(buffer) {
+
+      var data = _bytes;
+
+      var i = 0;
+
+      while (i + 1 < data.length) {
+
+        var c = ( (0xff & data[i]) << 8) | (0xff & data[i + 1]);
+
+        if (0x8140 <= c && c <= 0x9FFC) {
+          c -= 0x8140;
+        } else if (0xE040 <= c && c <= 0xEBBF) {
+          c -= 0xC140;
+        } else {
+          throw 'illegal char at ' + (i + 1) + '/' + c;
+        }
+
+        c = ( (c >>> 8) & 0xff) * 0xC0 + (c & 0xff);
+
+        buffer.put(c, 13);
+
+        i += 2;
+      }
+
+      if (i < data.length) {
+        throw 'illegal char at ' + (i + 1);
+      }
+    };
+
+    return _this;
+  };
+
+  //=====================================================================
+  // GIF Support etc.
+  //
+
+  //---------------------------------------------------------------------
+  // byteArrayOutputStream
+  //---------------------------------------------------------------------
+
+  var byteArrayOutputStream = function() {
+
+    var _bytes = [];
+
+    var _this = {};
+
+    _this.writeByte = function(b) {
+      _bytes.push(b & 0xff);
+    };
+
+    _this.writeShort = function(i) {
+      _this.writeByte(i);
+      _this.writeByte(i >>> 8);
+    };
+
+    _this.writeBytes = function(b, off, len) {
+      off = off || 0;
+      len = len || b.length;
+      for (var i = 0; i < len; i += 1) {
+        _this.writeByte(b[i + off]);
+      }
+    };
+
+    _this.writeString = function(s) {
+      for (var i = 0; i < s.length; i += 1) {
+        _this.writeByte(s.charCodeAt(i) );
+      }
+    };
+
+    _this.toByteArray = function() {
+      return _bytes;
+    };
+
+    _this.toString = function() {
+      var s = '';
+      s += '[';
+      for (var i = 0; i < _bytes.length; i += 1) {
+        if (i > 0) {
+          s += ',';
+        }
+        s += _bytes[i];
+      }
+      s += ']';
+      return s;
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // base64EncodeOutputStream
+  //---------------------------------------------------------------------
+
+  var base64EncodeOutputStream = function() {
+
+    var _buffer = 0;
+    var _buflen = 0;
+    var _length = 0;
+    var _base64 = '';
+
+    var _this = {};
+
+    var writeEncoded = function(b) {
+      _base64 += String.fromCharCode(encode(b & 0x3f) );
+    };
+
+    var encode = function(n) {
+      if (n < 0) {
+        // error.
+      } else if (n < 26) {
+        return 0x41 + n;
+      } else if (n < 52) {
+        return 0x61 + (n - 26);
+      } else if (n < 62) {
+        return 0x30 + (n - 52);
+      } else if (n == 62) {
+        return 0x2b;
+      } else if (n == 63) {
+        return 0x2f;
+      }
+      throw 'n:' + n;
+    };
+
+    _this.writeByte = function(n) {
+
+      _buffer = (_buffer << 8) | (n & 0xff);
+      _buflen += 8;
+      _length += 1;
+
+      while (_buflen >= 6) {
+        writeEncoded(_buffer >>> (_buflen - 6) );
+        _buflen -= 6;
+      }
+    };
+
+    _this.flush = function() {
+
+      if (_buflen > 0) {
+        writeEncoded(_buffer << (6 - _buflen) );
+        _buffer = 0;
+        _buflen = 0;
+      }
+
+      if (_length % 3 != 0) {
+        // padding
+        var padlen = 3 - _length % 3;
+        for (var i = 0; i < padlen; i += 1) {
+          _base64 += '=';
+        }
+      }
+    };
+
+    _this.toString = function() {
+      return _base64;
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // base64DecodeInputStream
+  //---------------------------------------------------------------------
+
+  var base64DecodeInputStream = function(str) {
+
+    var _str = str;
+    var _pos = 0;
+    var _buffer = 0;
+    var _buflen = 0;
+
+    var _this = {};
+
+    _this.read = function() {
+
+      while (_buflen < 8) {
+
+        if (_pos >= _str.length) {
+          if (_buflen == 0) {
+            return -1;
+          }
+          throw 'unexpected end of file./' + _buflen;
+        }
+
+        var c = _str.charAt(_pos);
+        _pos += 1;
+
+        if (c == '=') {
+          _buflen = 0;
+          return -1;
+        } else if (c.match(/^\s$/) ) {
+          // ignore if whitespace.
+          continue;
+        }
+
+        _buffer = (_buffer << 6) | decode(c.charCodeAt(0) );
+        _buflen += 6;
+      }
+
+      var n = (_buffer >>> (_buflen - 8) ) & 0xff;
+      _buflen -= 8;
+      return n;
+    };
+
+    var decode = function(c) {
+      if (0x41 <= c && c <= 0x5a) {
+        return c - 0x41;
+      } else if (0x61 <= c && c <= 0x7a) {
+        return c - 0x61 + 26;
+      } else if (0x30 <= c && c <= 0x39) {
+        return c - 0x30 + 52;
+      } else if (c == 0x2b) {
+        return 62;
+      } else if (c == 0x2f) {
+        return 63;
+      } else {
+        throw 'c:' + c;
+      }
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // gifImage (B/W)
+  //---------------------------------------------------------------------
+
+  var gifImage = function(width, height) {
+
+    var _width = width;
+    var _height = height;
+    var _data = new Array(width * height);
+
+    var _this = {};
+
+    _this.setPixel = function(x, y, pixel) {
+      _data[y * _width + x] = pixel;
+    };
+
+    _this.write = function(out) {
+
+      //---------------------------------
+      // GIF Signature
+
+      out.writeString('GIF87a');
+
+      //---------------------------------
+      // Screen Descriptor
+
+      out.writeShort(_width);
+      out.writeShort(_height);
+
+      out.writeByte(0x80); // 2bit
+      out.writeByte(0);
+      out.writeByte(0);
+
+      //---------------------------------
+      // Global Color Map
+
+      // black
+      out.writeByte(0x00);
+      out.writeByte(0x00);
+      out.writeByte(0x00);
+
+      // white
+      out.writeByte(0xff);
+      out.writeByte(0xff);
+      out.writeByte(0xff);
+
+      //---------------------------------
+      // Image Descriptor
+
+      out.writeString(',');
+      out.writeShort(0);
+      out.writeShort(0);
+      out.writeShort(_width);
+      out.writeShort(_height);
+      out.writeByte(0);
+
+      //---------------------------------
+      // Local Color Map
+
+      //---------------------------------
+      // Raster Data
+
+      var lzwMinCodeSize = 2;
+      var raster = getLZWRaster(lzwMinCodeSize);
+
+      out.writeByte(lzwMinCodeSize);
+
+      var offset = 0;
+
+      while (raster.length - offset > 255) {
+        out.writeByte(255);
+        out.writeBytes(raster, offset, 255);
+        offset += 255;
+      }
+
+      out.writeByte(raster.length - offset);
+      out.writeBytes(raster, offset, raster.length - offset);
+      out.writeByte(0x00);
+
+      //---------------------------------
+      // GIF Terminator
+      out.writeString(';');
+    };
+
+    var bitOutputStream = function(out) {
+
+      var _out = out;
+      var _bitLength = 0;
+      var _bitBuffer = 0;
+
+      var _this = {};
+
+      _this.write = function(data, length) {
+
+        if ( (data >>> length) != 0) {
+          throw 'length over';
+        }
+
+        while (_bitLength + length >= 8) {
+          _out.writeByte(0xff & ( (data << _bitLength) | _bitBuffer) );
+          length -= (8 - _bitLength);
+          data >>>= (8 - _bitLength);
+          _bitBuffer = 0;
+          _bitLength = 0;
+        }
+
+        _bitBuffer = (data << _bitLength) | _bitBuffer;
+        _bitLength = _bitLength + length;
+      };
+
+      _this.flush = function() {
+        if (_bitLength > 0) {
+          _out.writeByte(_bitBuffer);
+        }
+      };
+
+      return _this;
+    };
+
+    var getLZWRaster = function(lzwMinCodeSize) {
+
+      var clearCode = 1 << lzwMinCodeSize;
+      var endCode = (1 << lzwMinCodeSize) + 1;
+      var bitLength = lzwMinCodeSize + 1;
+
+      // Setup LZWTable
+      var table = lzwTable();
+
+      for (var i = 0; i < clearCode; i += 1) {
+        table.add(String.fromCharCode(i) );
+      }
+      table.add(String.fromCharCode(clearCode) );
+      table.add(String.fromCharCode(endCode) );
+
+      var byteOut = byteArrayOutputStream();
+      var bitOut = bitOutputStream(byteOut);
+
+      // clear code
+      bitOut.write(clearCode, bitLength);
+
+      var dataIndex = 0;
+
+      var s = String.fromCharCode(_data[dataIndex]);
+      dataIndex += 1;
+
+      while (dataIndex < _data.length) {
+
+        var c = String.fromCharCode(_data[dataIndex]);
+        dataIndex += 1;
+
+        if (table.contains(s + c) ) {
+
+          s = s + c;
+
+        } else {
+
+          bitOut.write(table.indexOf(s), bitLength);
+
+          if (table.size() < 0xfff) {
+
+            if (table.size() == (1 << bitLength) ) {
+              bitLength += 1;
+            }
+
+            table.add(s + c);
+          }
+
+          s = c;
+        }
+      }
+
+      bitOut.write(table.indexOf(s), bitLength);
+
+      // end code
+      bitOut.write(endCode, bitLength);
+
+      bitOut.flush();
+
+      return byteOut.toByteArray();
+    };
+
+    var lzwTable = function() {
+
+      var _map = {};
+      var _size = 0;
+
+      var _this = {};
+
+      _this.add = function(key) {
+        if (_this.contains(key) ) {
+          throw 'dup key:' + key;
+        }
+        _map[key] = _size;
+        _size += 1;
+      };
+
+      _this.size = function() {
+        return _size;
+      };
+
+      _this.indexOf = function(key) {
+        return _map[key];
+      };
+
+      _this.contains = function(key) {
+        return typeof _map[key] != 'undefined';
+      };
+
+      return _this;
+    };
+
+    return _this;
+  };
+
+  var createDataURL = function(width, height, getPixel) {
+    var gif = gifImage(width, height);
+    for (var y = 0; y < height; y += 1) {
+      for (var x = 0; x < width; x += 1) {
+        gif.setPixel(x, y, getPixel(x, y) );
+      }
+    }
+
+    var b = byteArrayOutputStream();
+    gif.write(b);
+
+    var base64 = base64EncodeOutputStream();
+    var bytes = b.toByteArray();
+    for (var i = 0; i < bytes.length; i += 1) {
+      base64.writeByte(bytes[i]);
+    }
+    base64.flush();
+
+    return 'data:image/gif;base64,' + base64;
+  };
+
+  //---------------------------------------------------------------------
+  // returns qrcode function.
+
+  return qrcode;
+}();
+
+// multibyte support
+!function() {
+
+  qrcode.stringToBytesFuncs['UTF-8'] = function(s) {
+    // http://stackoverflow.com/questions/18729405/how-to-convert-utf8-string-to-byte-array
+    function toUTF8Array(str) {
+      var utf8 = [];
+      for (var i=0; i < str.length; i++) {
+        var charcode = str.charCodeAt(i);
+        if (charcode < 0x80) utf8.push(charcode);
+        else if (charcode < 0x800) {
+          utf8.push(0xc0 | (charcode >> 6),
+              0x80 | (charcode & 0x3f));
+        }
+        else if (charcode < 0xd800 || charcode >= 0xe000) {
+          utf8.push(0xe0 | (charcode >> 12),
+              0x80 | ((charcode>>6) & 0x3f),
+              0x80 | (charcode & 0x3f));
+        }
+        // surrogate pair
+        else {
+          i++;
+          // UTF-16 encodes 0x10000-0x10FFFF by
+          // subtracting 0x10000 and splitting the
+          // 20 bits of 0x0-0xFFFFF into two halves
+          charcode = 0x10000 + (((charcode & 0x3ff)<<10)
+            | (str.charCodeAt(i) & 0x3ff));
+          utf8.push(0xf0 | (charcode >>18),
+              0x80 | ((charcode>>12) & 0x3f),
+              0x80 | ((charcode>>6) & 0x3f),
+              0x80 | (charcode & 0x3f));
+        }
+      }
+      return utf8;
+    }
+    return toUTF8Array(s);
+  };
+
+}();
+
+(function (factory) {
+  if (typeof define === 'function' && define.amd) {
+      define([], factory);
+  } else if (typeof exports === 'object') {
+      module.exports = factory();
+  }
+}(function () {
+    return qrcode;
+}));
+
+</script>
+
+<script>
+const STORAGE_KEY = 'pizzajv_transactions';
+const CART_KEY = 'pizzajv_cart';
+const BUSINESS_KEY = 'pizzajv_business';
+const THEME_KEY = 'pizzajv_theme';
+const EVENTS_KEY = 'pizzajv_events';
+const ACTIVE_EVENT_KEY = 'pizzajv_active_event';
+const SETTINGS_KEY = 'pizzajv_settings';
+const COUNTER_KEY = 'pizzajv_counter';
+const REPORTS_KEY = 'pizzajv_reports_sent';
+const SNOOZE_KEY = 'pizzajv_report_snooze';
+
+const DEFAULT_SETTINGS = {
+  reviewUrl: '',
+  reportEnabled: true,
+  reportHour: '21:00',
+  reportEmail: 'contact@pizzajv.fr',
+  reportStart: null,
+  readyMessage: 'Ciao{prenom} ! Votre commande PizzaJV n° {numero} est prête 🍕 Elle vous attend au camion. Buon appetito !',
+  supplements: []
+};
+
+const EVENT_TYPES = {
+  mariage: '💍 Mariage',
+  anniversaire: '🎂 Anniversaire',
+  entreprise: '🏢 Entreprise',
+  association: '🤝 Association',
+  autre: '🎉 Autre'
+};
+
+let paymentCallback = null;
+
+const DEFAULT_BUSINESS = {
+  name: 'PizzaJV',
+  legal: 'Thomas Visine - Entreprise Individuelle',
+  siret: '91124775700014',
+  address: '2 rue du Petit Goulet, 17170 Courçon',
+  phone: '06 52 89 76 96',
+  email: 'contact@pizzajv.fr',
+  tva: 'TVA non applicable, art. 293 B du CGI'
+};
+
+const MODE_LABELS = {
+  cb: '💳 Carte bancaire',
+  cash: '💵 Espèces',
+  check: '✓ Chèque',
+  ticket: '🎫 Ticket restaurant',
+  catalog: '📋 Catalogue',
+  transfer: '🏦 Virement',
+  event: '🎉 Forfait événement'
+};
+
+const PRODUCTS = {
+  pizzas: [
+    { name: 'Marguerite', price: 12 },
+    { name: 'Regina', price: 13 },
+    { name: 'Veget\'', price: 13 },
+    { name: 'Quatre From\'', price: 13.5 },
+    { name: 'Pondichéry', price: 13.5 },
+    { name: 'Chèvre Miel', price: 13 },
+    { name: 'Paysanne', price: 13 },
+    { name: 'Thon', price: 13 },
+    { name: 'Sicilienne', price: 13 },
+    { name: 'Hamburger', price: 13.5 },
+    { name: 'Chorizo', price: 13 },
+    { name: 'Raclette', price: 13.5 },
+    { name: 'Flammenkuche', price: 13 },
+    { name: 'Normande', price: 13 },
+    { name: 'Pera', price: 13 },
+    { name: 'Truite', price: 13.5 },
+    { name: 'Chèvre Saumon', price: 13.5 },
+    { name: 'Toquette', price: 13 },
+    { name: 'Vesuvio', price: 13 },
+    { name: 'Pizza du moment', price: 14 },
+    { name: 'Movember', price: 15 }
+  ],
+  teglia: [
+    { name: 'Teglia Thon', price: 5 },
+    { name: 'Teglia Marguerite', price: 5 },
+    { name: 'Teglia Flammenkuche', price: 5 },
+    { name: 'Teglia Napolitaine', price: 5 }
+  ],
+  panuozzo: [{ name: 'Panuozzo', price: 9 }],
+  bieres: [
+    { name: 'Birra Moretti 33cl', price: 4 },
+    { name: 'La Finambule Blonde', price: 4.5 }
+  ],
+  vins: [
+    { name: 'Terrazza Rosato 75cl', price: 7.5 },
+    { name: "Rosso Terre d'Abruzzo Bio 75cl", price: 9.5 },
+    { name: 'Lambrusco Bio', price: 10 },
+    { name: "Solidale Bianco Terre d'Abruzzo", price: 11.9 },
+    { name: 'Riviera Pinot Grigio Rosato', price: 12.9 },
+    { name: 'Bardolino Classico Bolla', price: 13.9 }
+  ],
+  boissons_eau: [
+    { name: 'S.Pellegrino 33cl', price: 2.5 },
+    { name: 'Evian 50cl', price: 1.2 }
+  ],
+  boissons_soft: [
+    { name: 'Thé Pêche BIO', price: 2.2 },
+    { name: 'Molecola classique 33cl', price: 2 },
+    { name: 'Mole Cola BIO Fair Trade 33cl', price: 2.5 },
+    { name: 'OREA Cola BIO', price: 3 },
+    { name: 'Jus Orange BIO 20cl', price: 3 },
+    { name: 'Dumatos Citron Gingembre', price: 2.5 }
+  ],
+  boissons_chaudes: [
+    { name: 'Le thé', price: 1.5 },
+    { name: 'Le café', price: 1 }
+  ],
+  desserts: [
+    { name: 'Amaretti Café Amande', price: 1.5 },
+    { name: 'Amaretti Noisette', price: 1.5 },
+    { name: 'Amaretti Pistache', price: 1.5 },
+    { name: 'Aragostine Pistache', price: 3 },
+    { name: 'Tartelette individuelle aux noisettes', price: 4 },
+    { name: 'Brookie', price: 3.5 },
+    { name: 'Cookie tout chocolat', price: 2 },
+    { name: 'Rocher noix de coco', price: 2 },
+    { name: 'Moelleux coeur chocolat noisette', price: 3.2 },
+    { name: 'Tiramisu', price: 3 },
+    { name: 'Mousse au chocolat', price: 4 }
+  ]
+};
+
+let currentMode = null;
+let deleteTargetId = null;
+let cart = [];
+let currentTransaction = null;
+let statsPeriod = 'day';
+
+// ==== THEME ====
+function getTheme() {
+  return localStorage.getItem(THEME_KEY) || 'auto';
+}
+
+function setTheme(theme) {
+  localStorage.setItem(THEME_KEY, theme);
+  applyTheme();
+}
+
+function applyTheme() {
+  const theme = getTheme();
+  const root = document.documentElement;
+  
+  if (theme === 'auto') {
+    root.removeAttribute('data-theme');
+  } else {
+    root.setAttribute('data-theme', theme);
+  }
+  
+  updateThemeButtons();
+  updateThemeIcon();
+}
+
+function updateThemeButtons() {
+  const theme = getTheme();
+  ['auto', 'light', 'dark'].forEach(t => {
+    const btn = document.getElementById('theme-' + t);
+    if (btn) {
+      btn.classList.toggle('active', t === theme);
+    }
+  });
+}
+
+function updateThemeIcon() {
+  const theme = getTheme();
+  const btn = document.getElementById('theme-toggle');
+  if (!btn) return;
+  
+  let icon = '🌙';
+  if (theme === 'light') icon = '☀️';
+  else if (theme === 'dark') icon = '🌙';
+  else icon = '🌓';
+  
+  btn.textContent = icon;
+}
+
+function toggleTheme() {
+  const theme = getTheme();
+  const next = theme === 'auto' ? 'light' : theme === 'light' ? 'dark' : 'auto';
+  setTheme(next);
+}
+
+// ==== STORAGE ====
+function getTransactions() {
+  try {
+    const data = localStorage.getItem(STORAGE_KEY);
+    return data ? JSON.parse(data) : [];
+  } catch (e) { return []; }
+}
+
+function getCart() {
+  try {
+    const data = localStorage.getItem(CART_KEY);
+    return data ? JSON.parse(data) : [];
+  } catch (e) { return []; }
+}
+
+function getBusiness() {
+  try {
+    const data = localStorage.getItem(BUSINESS_KEY);
+    return data ? JSON.parse(data) : DEFAULT_BUSINESS;
+  } catch (e) { return DEFAULT_BUSINESS; }
+}
+
+function saveCart(items) {
+  localStorage.setItem(CART_KEY, JSON.stringify(items));
+}
+
+function saveBusinessInfo() {
+  const biz = {
+    name: document.getElementById('biz-name').value.trim() || DEFAULT_BUSINESS.name,
+    legal: document.getElementById('biz-legal').value.trim() || DEFAULT_BUSINESS.legal,
+    siret: document.getElementById('biz-siret').value.trim() || DEFAULT_BUSINESS.siret,
+    address: document.getElementById('biz-address').value.trim() || DEFAULT_BUSINESS.address,
+    phone: document.getElementById('biz-phone').value.trim() || DEFAULT_BUSINESS.phone,
+    email: document.getElementById('biz-email').value.trim() || DEFAULT_BUSINESS.email,
+    tva: document.getElementById('biz-tva').value.trim() || DEFAULT_BUSINESS.tva
+  };
+  localStorage.setItem(BUSINESS_KEY, JSON.stringify(biz));
+  showSection('settings');
+}
+
+function loadBusinessInfo() {
+  const biz = getBusiness();
+  document.getElementById('biz-name').value = biz.name;
+  document.getElementById('biz-legal').value = biz.legal;
+  document.getElementById('biz-siret').value = biz.siret;
+  document.getElementById('biz-address').value = biz.address;
+  document.getElementById('biz-phone').value = biz.phone;
+  document.getElementById('biz-email').value = biz.email;
+  document.getElementById('biz-tva').value = biz.tva;
+}
+
+// ==== CATALOG ====
+function renderCatalog() {
+  renderGrid('grid-pizzas', PRODUCTS.pizzas);
+  renderGrid('grid-teglia', PRODUCTS.teglia);
+  renderGrid('grid-panuozzo', PRODUCTS.panuozzo);
+  renderGrid('grid-bieres', PRODUCTS.bieres);
+  renderGrid('grid-vins', PRODUCTS.vins);
+  renderGrid('grid-boissons-eau', PRODUCTS.boissons_eau);
+  renderGrid('grid-boissons-soft', PRODUCTS.boissons_soft);
+  renderGrid('grid-boissons-chaudes', PRODUCTS.boissons_chaudes);
+  renderGrid('grid-desserts', PRODUCTS.desserts);
+}
+
+function renderGrid(gridId, products) {
+  const grid = document.getElementById(gridId);
+  if (!grid) return;
+  
+  const cartData = getCart();
+  const qtyMap = {};
+  cartData.forEach(item => {
+    qtyMap[item.name] = (qtyMap[item.name] || 0) + (item.qty || 1);
+  });
+  
+  grid.innerHTML = products.map(p => {
+    const qty = qtyMap[p.name] || 0;
+    const escaped = p.name.replace(/'/g, "\\'");
+    return `
+      <button class="product-btn" onclick="addProduct('${escaped}', ${p.price})">
+        ${qty > 0 ? `<div class="product-qty-badge">${qty}</div>` : ''}
+        <div class="product-name">${p.name}</div>
+        <div class="product-price">${p.price.toFixed(2).replace('.00', '').replace('.', ',')}€</div>
+      </button>
+    `;
+  }).join('');
+}
+
+function switchCatalogTab(btn, tab) {
+  document.querySelectorAll('.catalog-tabs .tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.catalog-content').forEach(c => c.style.display = 'none');
+  document.getElementById('catalog-' + tab).style.display = 'block';
+  updateCartDisplay();
+}
+
+function addProduct(name, price) {
+  cart = getCart();
+  const existing = cart.find(item => item.name === name);
+  if (existing) {
+    existing.qty = (existing.qty || 1) + 1;
+  } else {
+    cart.push({ name, price, qty: 1 });
+  }
+  saveCart(cart);
+  renderCatalog();
+  updateCartDisplay();
+}
+
+function changeQty(name, delta) {
+  cart = getCart();
+  const item = cart.find(i => i.name === name);
+  if (!item) return;
+  item.qty = (item.qty || 1) + delta;
+  if (item.qty <= 0) {
+    cart = cart.filter(i => i.name !== name);
+  }
+  saveCart(cart);
+  renderCatalog();
+  updateCartDisplay();
+}
+
+function updateCartDisplay() {
+  cart = getCart();
+  const cartFloating = document.getElementById('cart-floating');
+  const cartTotalFixed = document.getElementById('cart-total-fixed');
+  const cartItemsCount = document.getElementById('cart-items-count');
+  const cartDetail = document.getElementById('cart-detail');
+
+  if (cart.length === 0) {
+    cartFloating.style.display = 'none';
+  } else {
+    const total = cart.reduce((sum, item) => sum + (item.price * (item.qty || 1)), 0);
+    const totalQty = cart.reduce((sum, item) => sum + (item.qty || 1), 0);
+    cartFloating.style.display = 'block';
+    cartTotalFixed.textContent = total.toFixed(2).replace('.', ',') + ' €';
+    const evCart = getActiveEvent();
+    const forfaitCart = evCart && evCart.billing === 'forfait';
+    cartItemsCount.textContent = totalQty + ' article' + (totalQty > 1 ? 's' : '') + (forfaitCart ? ' (inclus au forfait)' : '');
+    document.getElementById('cart-pay-btn').textContent = forfaitCart ? '✓ Servir (forfait)' : '💳 Payer';
+    
+    cartDetail.innerHTML = cart.map(item => {
+      const escaped = item.name.replace(/'/g, "\\'");
+      return `
+        <div class="cart-detail-item">
+          <div class="cart-detail-name">${item.name}</div>
+          <div class="cart-qty-controls">
+            <button class="qty-btn" onclick="changeQty('${escaped}', -1)">−</button>
+            <span class="qty-display">${item.qty || 1}</span>
+            <button class="qty-btn" onclick="changeQty('${escaped}', 1)">+</button>
+          </div>
+          <div class="cart-item-price">${(item.price * (item.qty || 1)).toFixed(2).replace('.', ',')}€</div>
+        </div>
+      `;
+    }).join('');
+  }
+}
+
+function clearCart() {
+  cart = [];
+  saveCart(cart);
+  renderCatalog();
+  updateCartDisplay();
+}
+
+function round2(n) {
+  const s = String(n);
+  if (s.indexOf('e') !== -1) return Math.round(n * 100) / 100;
+  return Number(Math.round(Number(s + 'e2')) + 'e-2');
+}
+
+let paymentCtx = null;
+
+function newPaymentCtx(simple, fixedAmount) {
+  return { simple: !!simple, fixedAmount: fixedAmount || 0, discount: null, supps: [], notify: { name: '', phone: '' }, open: null };
+}
+
+function paymentTotals() {
+  const ctx = paymentCtx;
+  if (ctx.simple) return { items: ctx.fixedAmount, supp: 0, sub: ctx.fixedAmount, disc: 0, final: ctx.fixedAmount };
+  const items = round2(getCart().reduce((s, i) => s + i.price * (i.qty || 1), 0));
+  const supp = round2(ctx.supps.reduce((s, x) => s + x.price * x.qty, 0));
+  const sub = round2(items + supp);
+  let disc = 0;
+  if (ctx.discount) {
+    disc = ctx.discount.type === 'pct' ? round2(sub * ctx.discount.value / 100) : round2(ctx.discount.value);
+  }
+  return { items, supp, sub, disc, final: round2(sub - disc) };
+}
+
+function discountLabel(d) {
+  return d.type === 'pct' ? String(d.value).replace('.', ',') + ' %' : fmt(d.value) + ' €';
+}
+
+function openPaymentModal() {
+  cart = getCart();
+  if (cart.length === 0) return;
+  const ev = getActiveEvent();
+  if (ev && ev.billing === 'forfait') { serveForfait(ev); return; }
+  paymentCtx = newPaymentCtx(false);
+  paymentCallback = completePayment;
+  document.getElementById('payment-title').textContent = 'Mode de paiement';
+  ['disc-value', 'supp-name', 'supp-price', 'notify-name', 'notify-phone'].forEach(id => { document.getElementById(id).value = ''; });
+  document.getElementById('supp-save').checked = false;
+  renderPayment();
+  document.getElementById('payment-modal').classList.add('active');
+}
+
+// Encaissement à montant fixe (forfait) : pas de remise, supplément ni message
+function openPaymentChoice(amount, title, callback) {
+  paymentCtx = newPaymentCtx(true, amount);
+  paymentCallback = callback;
+  document.getElementById('payment-title').textContent = title;
+  renderPayment();
+  document.getElementById('payment-modal').classList.add('active');
+}
+
+function choosePayment(mode) {
+  const callback = paymentCallback;
+  paymentCallback = null;
+  closePaymentModal();
+  if (callback) callback(mode);
+}
+
+function toggleAcc(name) {
+  if (!paymentCtx) return;
+  paymentCtx.open = paymentCtx.open === name ? null : name;
+  renderPayment();
+}
+
+function setDiscount(type, value) {
+  if (!paymentCtx) return;
+  value = parseFloat(String(value).replace(',', '.'));
+  const sub = paymentTotals().sub;
+  if (!(value > 0)) { alert('Saisis une remise supérieure à 0'); return; }
+  if (type === 'pct' && value >= 100) { alert('La remise doit rester inférieure à 100 %'); return; }
+  if (type === 'eur' && value >= sub) { alert('La remise doit rester inférieure au total (' + fmt(sub) + ' €)'); return; }
+  paymentCtx.discount = { type: type, value: value };
+  renderPayment();
+}
+
+function applyCustomDiscount() {
+  setDiscount(document.getElementById('disc-type').value, document.getElementById('disc-value').value);
+  document.getElementById('disc-value').value = '';
+}
+
+function clearDiscount() {
+  if (!paymentCtx) return;
+  paymentCtx.discount = null;
+  renderPayment();
+}
+
+function suppDisplayName(name) {
+  return /^suppl/i.test(name) ? name : 'Suppl. ' + name;
+}
+
+function addSupp(name, price) {
+  if (!paymentCtx) return;
+  const existing = paymentCtx.supps.find(x => x.name === name && x.price === price);
+  if (existing) existing.qty += 1;
+  else paymentCtx.supps.push({ name: name, price: price, qty: 1 });
+  renderPayment();
+}
+
+function addSuppPreset(i) {
+  const p = (getSettings().supplements || [])[i];
+  if (p) addSupp(p.name, p.price);
+}
+
+function changeSuppQty(i, delta) {
+  if (!paymentCtx || !paymentCtx.supps[i]) return;
+  paymentCtx.supps[i].qty += delta;
+  if (paymentCtx.supps[i].qty <= 0) paymentCtx.supps.splice(i, 1);
+  renderPayment();
+}
+
+function addCustomSupp() {
+  const name = document.getElementById('supp-name').value.trim();
+  const price = round2(parseFloat(String(document.getElementById('supp-price').value).replace(',', '.')));
+  if (!name) { alert('Donne un nom au supplément'); return; }
+  if (!(price > 0) || price >= 1000) { alert('Prix du supplément invalide'); return; }
+  if (document.getElementById('supp-save').checked) {
+    const s = getSettings();
+    const list = (s.supplements || []).slice();
+    if (!list.some(x => x.name.toLowerCase() === name.toLowerCase() && x.price === price)) list.push({ name: name, price: price });
+    s.supplements = list;
+    saveSettings(s);
+    document.getElementById('supp-save').checked = false;
+  }
+  document.getElementById('supp-name').value = '';
+  document.getElementById('supp-price').value = '';
+  addSupp(name, price);
+}
+
+function updateNotifyCtx() {
+  if (!paymentCtx) return;
+  paymentCtx.notify.name = document.getElementById('notify-name').value.trim();
+  paymentCtx.notify.phone = document.getElementById('notify-phone').value.trim();
+  const on = !!(paymentCtx.notify.name || paymentCtx.notify.phone);
+  document.getElementById('acc-state-notify').textContent = on ? 'Oui' : 'Non';
+  document.getElementById('acc-head-notify').classList.toggle('on', on);
+}
+
+function renderPayment() {
+  const ctx = paymentCtx;
+  if (!ctx) return;
+  let totals = paymentTotals();
+  if (ctx.discount && totals.disc >= totals.sub) {
+    ctx.discount = null;
+    toast('Remise retirée : elle dépassait le total');
+    totals = paymentTotals();
+  }
+
+  document.getElementById('payment-total-amount').textContent = fmt(totals.final) + ' €';
+  const parts = [];
+  if (totals.supp > 0 || totals.disc > 0) {
+    parts.push('Articles ' + fmt(totals.items) + ' €');
+    if (totals.supp > 0) parts.push('Suppléments +' + fmt(totals.supp) + ' €');
+    if (totals.disc > 0) parts.push('Remise −' + fmt(totals.disc) + ' €');
+  }
+  document.getElementById('payment-breakdown').textContent = parts.join(', ');
+  document.getElementById('pay-extras').style.display = ctx.simple ? 'none' : 'block';
+  if (ctx.simple) return;
+
+  // Remise
+  document.getElementById('acc-state-discount').textContent = ctx.discount ? '−' + discountLabel(ctx.discount) + ' (−' + fmt(totals.disc) + ' €)' : 'Aucune';
+  document.getElementById('acc-head-discount').classList.toggle('on', !!ctx.discount);
+  document.querySelectorAll('#acc-discount .chip[data-t]').forEach(chip => {
+    chip.classList.toggle('active', !!ctx.discount && chip.dataset.t === ctx.discount.type && parseFloat(chip.dataset.v) === ctx.discount.value);
+  });
+
+  // Supplément
+  const suppQty = ctx.supps.reduce((s, x) => s + x.qty, 0);
+  document.getElementById('acc-state-supp').textContent = suppQty ? '+' + fmt(totals.supp) + ' € (' + suppQty + ')' : 'Aucun';
+  document.getElementById('acc-head-supp').classList.toggle('on', suppQty > 0);
+  const presets = getSettings().supplements || [];
+  document.getElementById('supp-presets').innerHTML = presets.length
+    ? presets.map((p, i) => `<button class="chip" onclick="addSuppPreset(${i})">${esc(p.name)} +${fmt(p.price)} €</button>`).join('')
+    : '<span class="hint" style="margin: 0;">Aucun supplément enregistré : saisis-en un ci-dessous, ou ajoute ta liste dans ⚙️.</span>';
+  document.getElementById('supp-list').innerHTML = ctx.supps.map((x, i) => `
+    <div class="supp-line"><span class="n">${esc(x.name)}</span>
+      <button class="qty-btn" onclick="changeSuppQty(${i}, -1)">−</button><span class="qty-display">${x.qty}</span><button class="qty-btn" onclick="changeSuppQty(${i}, 1)">+</button>
+      <span style="min-width: 54px; text-align: right; color: var(--terracotta); font-weight: 600;">${fmt(x.price * x.qty)} €</span></div>`).join('');
+
+  // Prévenir
+  updateNotifyCtx();
+
+  // Ouverture d'un seul sous-menu à la fois
+  ['discount', 'supp', 'notify'].forEach(name => {
+    document.getElementById('acc-' + name).style.display = ctx.open === name ? 'block' : 'none';
+    document.getElementById('acc-head-' + name).classList.toggle('open', ctx.open === name);
+  });
+}
+
+function closePaymentModal() {
+  document.getElementById('payment-modal').classList.remove('active');
+}
+
+function completePayment(mode) {
+  cart = getCart();
+  if (cart.length === 0) return;
+  if (!paymentCtx) paymentCtx = newPaymentCtx(false);
+  const ctx = paymentCtx;
+  const totals = paymentTotals();
+
+  const items = [];
+  cart.forEach(item => {
+    const qty = item.qty || 1;
+    for (let i = 0; i < qty; i++) items.push({ name: item.name, price: item.price });
+  });
+  const detailedItems = cart.map(i => ({ name: i.name, price: i.price, qty: i.qty || 1 }));
+  ctx.supps.forEach(x => detailedItems.push({ name: suppDisplayName(x.name), price: x.price, qty: x.qty, supplement: true }));
+  const ev = getActiveEvent();
+
+  const transaction = {
+    id: Date.now(),
+    date: new Date().toISOString(),
+    amount: totals.final,
+    mode: mode,
+    client: ev ? ev.name : 'Catalogue',
+    items: items,
+    detailedItems: detailedItems,
+    number: nextNumber()
+  };
+  if (totals.disc > 0) {
+    transaction.subtotal = totals.sub;
+    transaction.discount = { type: ctx.discount.type, value: ctx.discount.value, amount: totals.disc, label: discountLabel(ctx.discount) };
+  }
+  if (ctx.notify.name || ctx.notify.phone) transaction.notify = { name: ctx.notify.name, phone: ctx.notify.phone };
+  if (ev) { transaction.eventId = ev.id; transaction.eventName = ev.name; }
+
+  const transactions = getTransactions();
+  transactions.push(transaction);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions));
+
+  paymentCtx = null;
+  clearCart();
+  updateDashboard();
+  showReceipt(transaction);
+}
+
+// Événement au forfait : on compte ce qui sort, à 0 €, sans numéro de reçu
+function serveForfait(ev) {
+  cart = getCart();
+  if (cart.length === 0) return;
+  const totalQty = cart.reduce((sum, item) => sum + (item.qty || 1), 0);
+
+  const transaction = {
+    id: Date.now(),
+    date: new Date().toISOString(),
+    amount: 0,
+    mode: 'event',
+    client: ev.name,
+    detailedItems: cart.map(i => ({ name: i.name, price: 0, listPrice: i.price, qty: i.qty || 1 })),
+    number: null,
+    forfaitService: true,
+    eventId: ev.id,
+    eventName: ev.name
+  };
+
+  const transactions = getTransactions();
+  transactions.push(transaction);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions));
+
+  clearCart();
+  updateDashboard();
+  toast('✓ ' + totalQty + ' article' + (totalQty > 1 ? 's' : '') + ' servi' + (totalQty > 1 ? 's' : '') + ' : ' + ev.name);
+}
+
+function saveTransactionData(transaction) {
+  const transactions = getTransactions();
+  transaction.id = Date.now();
+  transaction.date = new Date().toISOString();
+  transaction.number = nextNumber();
+  const ev = getActiveEvent();
+  if (ev && !transaction.eventId) { transaction.eventId = ev.id; transaction.eventName = ev.name; }
+  transactions.push(transaction);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions));
+  return transaction;
+}
+
+function deleteTransaction(id) {
+  deleteTargetId = id;
+  showModal('Supprimer transaction', 'Action irréversible', 'Supprimer', () => {
+    const transactions = getTransactions();
+    const filtered = transactions.filter(t => t.id !== deleteTargetId);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
+    closeModal();
+    updateDashboard();
+  });
+}
+
+function selectMode(btn) {
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  currentMode = btn.dataset.mode;
+  document.getElementById('paymentMode').value = currentMode;
+}
+
+function saveTransaction() {
+  const amount = parseFloat(document.getElementById('amount').value);
+  const mode = document.getElementById('paymentMode').value;
+  const client = document.getElementById('client').value;
+  const notes = document.getElementById('notes').value;
+
+  if (!amount || !mode) { alert('Montant et mode requis'); return; }
+
+  const transaction = saveTransactionData({
+    amount, mode,
+    client: client || 'Sans client',
+    notes
+  });
+
+  document.getElementById('amount').value = '';
+  document.getElementById('client').value = '';
+  document.getElementById('notes').value = '';
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('selected'));
+  currentMode = null;
+
+  showReceipt(transaction);
+  updateDashboard();
+}
+
+function receiptTitle(t) {
+  return t.forfaitService ? 'Bon de service' : 'Reçu N° ' + String(t.number).padStart(4, '0');
+}
+
+// Une ligne par produit
+function receiptLines(t) {
+  const lines = [];
+  if (t.detailedItems && t.detailedItems.length > 0) {
+    t.detailedItems.forEach(item => {
+      const qty = item.qty || 1;
+      if (t.forfaitService) {
+        lines.push({ label: qty + '× ' + item.name, value: 'inclus' });
+      } else if (qty > 1) {
+        lines.push({ label: qty + '× ' + item.name + ' (' + fmt(item.price) + ' €)', value: fmt(item.price * qty) + ' €' });
+      } else {
+        lines.push({ label: item.name, value: fmt(item.price) + ' €' });
+      }
+    });
+  } else if (t.items && t.items.length > 0) {
+    t.items.forEach(item => lines.push({ label: item.name, value: fmt(item.price) + ' €' }));
+  } else {
+    lines.push({ label: t.notes || 'Prestation', value: fmt(t.amount) + ' €' });
+  }
+  if (t.discount && t.discount.amount > 0) {
+    lines.push({ label: 'Sous-total', value: fmt(t.subtotal) + ' €' });
+    lines.push({ label: 'Remise ' + t.discount.label, value: '−' + fmt(t.discount.amount) + ' €' });
+  }
+  return lines;
+}
+
+function showReceipt(transaction) {
+  currentTransaction = transaction;
+  const biz = getBusiness();
+  const settings = getSettings();
+  const date = new Date(transaction.date);
+
+  let content = `
+    <div class="receipt-business">
+      <div class="receipt-business-name">${esc(biz.name)}</div>
+      <div>${esc(biz.legal)}</div>
+      <div>SIRET ${esc(biz.siret)}</div>
+      <div>${esc(biz.address)}</div>
+      <div>Tél ${esc(biz.phone)} - ${esc(biz.email)}</div>
+    </div>
+    <div class="receipt-header">
+      <div class="receipt-title">${receiptTitle(transaction)}</div>
+      <div class="receipt-meta">${date.toLocaleDateString('fr-FR')} - ${date.toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})}</div>
+      ${transaction.eventName ? `<div class="receipt-meta" style="margin-top: 4px;">Événement : ${esc(transaction.eventName)}</div>` : ''}
+    </div>
+    <div class="receipt-content">
+  `;
+
+  receiptLines(transaction).forEach(line => {
+    content += `<div class="receipt-line"><span>${esc(line.label)}</span><span>${esc(line.value)}</span></div>`;
+  });
+
+  if (transaction.forfaitService) {
+    content += `<div class="receipt-line total"><span>Inclus dans le forfait</span><span></span></div></div>`;
+  } else {
+    content += `<div class="receipt-line total"><span>TOTAL TTC</span><span>${fmt(transaction.amount)} €</span></div></div>
+    <div class="receipt-payment">Mode de paiement : ${MODE_LABELS[transaction.mode] || esc(transaction.mode)}</div>`;
+  }
+
+  content += `
+    <div class="receipt-legal">${esc(biz.tva)}</div>
+    <div class="receipt-footer"><p>Merci de votre visite ! 🍕</p><p style="margin-top: 4px;">À bientôt chez PizzaJV</p></div>
+  `;
+
+  if (settings.reviewUrl) {
+    const svg = qrSvg(settings.reviewUrl);
+    if (svg) {
+      content += `<div class="receipt-review"><div style="margin-bottom: 8px;">⭐ Votre avis Google nous aide. Scannez :</div><div class="qr-box">${svg}</div></div>`;
+    }
+  }
+
+  document.getElementById('receiptContent').innerHTML = content;
+  renderReadyBox(transaction);
+  showSection('receipt');
+}
+
+function getReceiptText() {
+  if (!currentTransaction) return '';
+  const biz = getBusiness();
+  const settings = getSettings();
+  const t = currentTransaction;
+  const date = new Date(t.date);
+
+  let text = `${biz.name}\n${biz.legal}\nSIRET ${biz.siret}\n${biz.address}\nTél ${biz.phone}\n${biz.email}\n\n`;
+  text += `${receiptTitle(t)}\n`;
+  text += `${date.toLocaleDateString('fr-FR')} à ${date.toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})}\n`;
+  if (t.eventName) text += `Événement : ${t.eventName}\n`;
+  text += `\n========================\n`;
+  receiptLines(t).forEach(line => { text += `${line.label} : ${line.value}\n`; });
+  text += `========================\n`;
+  if (t.forfaitService) {
+    text += `Inclus dans le forfait\n\n`;
+  } else {
+    text += `TOTAL TTC : ${fmt(t.amount)} €\n\nMode de paiement : ${MODE_LABELS[t.mode] || t.mode}\n\n`;
+  }
+  text += `${biz.tva}\n\nMerci de votre visite ! 🍕\nÀ bientôt chez PizzaJV`;
+  if (settings.reviewUrl) text += `\n\n⭐ Votre avis Google nous aide : ${settings.reviewUrl}`;
+  return text;
+}
+
+function receiptSubject() {
+  const t = currentTransaction;
+  return t.forfaitService ? 'Bon de service PizzaJV' : `Reçu PizzaJV N° ${String(t.number).padStart(4, '0')}`;
+}
+
+function sendByEmail() {
+  if (!currentTransaction) return;
+  const subject = receiptSubject();
+  window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(getReceiptText())}`;
+}
+
+function sendBySMS() {
+  if (!currentTransaction) return;
+  window.location.href = `sms:?&body=${encodeURIComponent(getReceiptText())}`;
+}
+
+function sendByWhatsApp() {
+  if (!currentTransaction) return;
+  window.open(`https://wa.me/?text=${encodeURIComponent(getReceiptText())}`, '_blank');
+}
+
+// ==== STATS ====
+function setStatsPeriod(period, btn) {
+  statsPeriod = period;
+  document.querySelectorAll('#stats .tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  updateStats();
+}
+
+function updateStats() {
+  const transactions = getTransactions();
+  const now = new Date();
+  let filtered = [];
+
+  if (statsPeriod === 'day') {
+    const today = now.toDateString();
+    filtered = transactions.filter(t => new Date(t.date).toDateString() === today);
+  } else if (statsPeriod === 'week') {
+    const weekAgo = new Date(now);
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    filtered = transactions.filter(t => new Date(t.date) >= weekAgo);
+  } else {
+    const monthAgo = new Date(now);
+    monthAgo.setMonth(monthAgo.getMonth() - 1);
+    filtered = transactions.filter(t => new Date(t.date) >= monthAgo);
+  }
+
+  const revenue = filtered.reduce((sum, t) => sum + t.amount, 0);
+  const count = filtered.filter(t => t.amount > 0).length;
+  const avg = count > 0 ? revenue / count : 0;
+
+  document.getElementById('stats-revenue').textContent = revenue.toFixed(2).replace('.', ',') + ' €';
+  document.getElementById('stats-count').textContent = count;
+  document.getElementById('stats-avg').textContent = avg.toFixed(2).replace('.', ',') + ' €';
+
+  const modes = {};
+  filtered.forEach(t => { modes[t.mode] = (modes[t.mode] || 0) + t.amount; });
+  
+  const modesHtml = Object.entries(modes)
+    .filter(entry => entry[1] > 0)
+    .sort((a, b) => b[1] - a[1])
+    .map(([mode, total]) => {
+      const pct = revenue > 0 ? (total / revenue * 100) : 0;
+      return `<div class="setting-item" style="display: block;"><div style="display: flex; justify-content: space-between; align-items: center;"><div class="setting-label">${MODE_LABELS[mode] || mode}</div><div class="setting-value">${total.toFixed(2).replace('.', ',')} € (${pct.toFixed(0)}%)</div></div><div class="stat-bar"><div class="stat-bar-fill" style="width: ${pct}%"></div></div></div>`;
+    }).join('');
+  
+  document.getElementById('stats-modes').innerHTML = modesHtml || '<p style="font-size: 12px; color: var(--brown-light); text-align: center; padding: 12px;">Aucune donnée</p>';
+
+  const products = {};
+  filtered.forEach(t => {
+    if (t.detailedItems) {
+      t.detailedItems.forEach(item => {
+        const key = item.name;
+        if (!products[key]) products[key] = { qty: 0, revenue: 0 };
+        products[key].qty += (item.qty || 1);
+        products[key].revenue += item.price * (item.qty || 1);
+      });
+    } else if (t.items) {
+      t.items.forEach(item => {
+        const key = item.name;
+        if (!products[key]) products[key] = { qty: 0, revenue: 0 };
+        products[key].qty += 1;
+        products[key].revenue += item.price;
+      });
+    }
+  });
+
+  const maxRev = Math.max(...Object.values(products).map(p => p.revenue), 1);
+  
+  const productsHtml = Object.entries(products)
+    .sort((a, b) => b[1].revenue - a[1].revenue)
+    .slice(0, 10)
+    .map(([name, data]) => {
+      const pct = (data.revenue / maxRev) * 100;
+      return `<div class="stat-product"><div class="stat-product-header"><div class="stat-product-name">${name}</div><div class="stat-product-revenue">${data.revenue.toFixed(2).replace('.', ',')} €</div></div><div class="stat-product-meta">${data.qty} vendu${data.qty > 1 ? 's' : ''}</div><div class="stat-bar"><div class="stat-bar-fill" style="width: ${pct}%"></div></div></div>`;
+    }).join('');
+  
+  document.getElementById('stats-products').innerHTML = productsHtml || '<p style="font-size: 12px; color: var(--brown-light); text-align: center; padding: 12px;">Aucune donnée</p>';
+}
+
+// ==== BACKUP ====
+function exportBackup() {
+  const backup = {
+    version: 10,
+    date: new Date().toISOString(),
+    transactions: getTransactions(),
+    business: getBusiness(),
+    events: getEvents(),
+    settings: getSettings(),
+    counter: peekNextNumber() - 1
+  };
+  const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = `PizzaJV-backup-${dayKey(new Date())}.json`;
+  link.click();
+}
+
+function importBackup(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const backup = JSON.parse(e.target.result);
+      if (!backup.transactions) throw new Error('Format invalide');
+
+      showModal('Importer la sauvegarde ?', `${backup.transactions.length} transactions dans le fichier (les doublons sont ignorés).`, 'Importer', () => {
+        const existing = getTransactions();
+        const existingIds = new Set(existing.map(t => t.id));
+        const newTransactions = backup.transactions.filter(t => !existingIds.has(t.id));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify([...existing, ...newTransactions]));
+        if (backup.business) localStorage.setItem(BUSINESS_KEY, JSON.stringify(backup.business));
+        if (Array.isArray(backup.events)) {
+          const events = getEvents();
+          const eventIds = new Set(events.map(ev => ev.id));
+          backup.events.forEach(ev => { if (!eventIds.has(ev.id)) events.push(Object.assign({}, ev, { status: 'closed' })); });
+          saveEvents(events);
+        }
+        if (backup.settings) saveSettings(Object.assign(getSettings(), backup.settings, { reportStart: getSettings().reportStart }));
+        if (backup.counter) {
+          const stored = parseInt(localStorage.getItem(COUNTER_KEY) || '0', 10);
+          localStorage.setItem(COUNTER_KEY, String(Math.max(stored, backup.counter)));
+        }
+        closeModal();
+        updateDashboard();
+        alert(`✓ ${newTransactions.length} transactions importées`);
+      });
+    } catch (err) {
+      alert('Erreur : ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+// ==== DASHBOARD ====
+function updateDashboard() {
+  const transactions = getTransactions();
+  const today = new Date().toDateString();
+  const todayTransactions = transactions.filter(t => new Date(t.date).toDateString() === today);
+  
+  const weekAgo = new Date();
+  weekAgo.setDate(weekAgo.getDate() - 7);
+  const weekTransactions = transactions.filter(t => new Date(t.date) >= weekAgo);
+
+  const todayTotal = todayTransactions.reduce((sum, t) => sum + t.amount, 0);
+  const weekTotal = weekTransactions.reduce((sum, t) => sum + t.amount, 0);
+
+  document.getElementById('today-total').textContent = todayTotal.toFixed(2).replace('.', ',') + ' €';
+  document.getElementById('today-count').textContent = todayTransactions.length;
+  document.getElementById('week-total').textContent = weekTotal.toFixed(2).replace('.', ',') + ' €';
+  document.getElementById('next-number').textContent = '#' + String(peekNextNumber()).padStart(4, '0');
+
+  if (transactions.length > 0) {
+    const last = transactions[transactions.length - 1];
+    document.getElementById('last-transaction').innerHTML = `<div>${last.amount.toFixed(2).replace('.', ',')} € - ${MODE_LABELS[last.mode] || last.mode}</div><div class="badge">${new Date(last.date).toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})}</div>`;
+  }
+
+  updateHistory();
+  updateSettings();
+  renderReadyPanel();
+}
+
+function updateHistory() {
+  const transactions = getTransactions().reverse();
+  const historyHtml = transactions.length === 0 
+    ? '<div class="empty-state"><p>Aucune transaction</p></div>'
+    : transactions.map(t => `<div class="transaction-item" style="border-left-color: ${t.mode === 'catalog' ? 'var(--gold)' : 'var(--terracotta)'}" onclick="reopenReceipt(${t.id})"><div class="transaction-info"><div class="transaction-type">${t.number ? '#' + String(t.number).padStart(4, '0') : 'Service'} - ${MODE_LABELS[t.mode] || esc(t.mode)}</div><div class="transaction-client">${esc(t.client || t.mode)}</div></div><div class="transaction-amount">${t.amount.toFixed(2).replace('.', ',')} €</div><button class="transaction-delete" onclick="event.stopPropagation(); deleteTransaction(${t.id})">✕</button></div>`).join('');
+  
+  document.getElementById('historyList').innerHTML = historyHtml;
+}
+
+function reopenReceipt(id) {
+  const tx = getTransactions().find(t => t.id === id);
+  if (tx) showReceipt(tx);
+}
+
+function updateSettings() {
+  const transactions = getTransactions();
+  const storageSize = (JSON.stringify(transactions).length / 1024).toFixed(1);
+  document.getElementById('total-transactions').textContent = transactions.length;
+  document.getElementById('storage-size').textContent = storageSize + ' KB';
+  updateThemeButtons();
+}
+
+function csvCell(value) {
+  return '"' + String(value == null ? '' : value).replace(/"/g, '""') + '"';
+}
+
+function exportCSV() {
+  const transactions = getTransactions();
+  if (transactions.length === 0) { alert('Aucune transaction'); return; }
+
+  let csv = 'Numéro,Date,Heure,Montant,Mode,Client,Événement,Remise,Produits\n';
+  transactions.forEach(t => {
+    const date = new Date(t.date);
+    let products = '';
+    if (t.detailedItems) products = t.detailedItems.map(i => `${i.qty || 1}× ${i.name}`).join(' | ');
+    else if (t.items) products = t.items.map(i => i.name).join(' | ');
+    else products = t.notes || '';
+    csv += [
+      t.number || '',
+      date.toLocaleDateString('fr-FR'),
+      date.toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'}),
+      t.amount.toFixed(2),
+      t.mode,
+      csvCell(t.client),
+      csvCell(t.eventName),
+      (t.discount ? t.discount.amount.toFixed(2) : ''),
+      csvCell(products)
+    ].join(',') + '\n';
+  });
+
+  const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = `PizzaJV-transactions-${dayKey(new Date())}.csv`;
+  link.click();
+}
+
+function printReceipt() { window.print(); }
+
+function showModal(title, text, confirmText, callback, cancelText, onCancel) {
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-text').textContent = text;
+  document.getElementById('modal-confirm').textContent = confirmText;
+  document.getElementById('modal-cancel').textContent = cancelText || 'Annuler';
+  document.getElementById('modal').classList.add('active');
+  document.getElementById('modal-confirm').onclick = callback;
+  document.getElementById('modal-cancel').onclick = onCancel || closeModal;
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('active');
+}
+
+function showSection(name) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById(name).classList.add('active');
+  document.getElementById('cart-floating').style.display = (name === 'catalog' && getCart().length > 0) ? 'block' : 'none';
+  if (name === 'dashboard' || name === 'settings') updateDashboard();
+  if (name === 'settings') loadSettingsForm();
+  if (name === 'catalog') { renderCatalog(); updateCartDisplay(); }
+  if (name === 'business-info') loadBusinessInfo();
+  if (name === 'stats') updateStats();
+  if (name === 'events') renderEvents();
+  if (name === 'review') renderReview();
+  updateEventBanner();
+  window.scrollTo(0, 0);
+}
+
+if (!localStorage.getItem(BUSINESS_KEY)) {
+  localStorage.setItem(BUSINESS_KEY, JSON.stringify(DEFAULT_BUSINESS));
+}
+
+// ==== OUTILS ====
+function esc(value) {
+  return String(value == null ? '' : value).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+function fmt(n) {
+  return Number(n || 0).toFixed(2).replace('.', ',');
+}
+
+function readJSON(key, fallback) {
+  try {
+    const data = localStorage.getItem(key);
+    return data ? JSON.parse(data) : fallback;
+  } catch (e) { return fallback; }
+}
+
+// Clé de jour en heure locale (et non UTC, sinon une vente à 23h30 bascule au lendemain)
+function dayKey(d) {
+  const x = new Date(d);
+  return x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0') + '-' + String(x.getDate()).padStart(2, '0');
+}
+
+function frDate(key) {
+  const parts = key.split('-').map(Number);
+  return new Date(parts[0], parts[1] - 1, parts[2]).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+let toastTimer = null;
+function toast(message) {
+  const el = document.getElementById('toast');
+  el.textContent = message;
+  el.classList.add('active');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('active'), 2500);
+}
+
+// ==== NUMÉROTATION ====
+// Compteur persistant : un numéro de reçu n'est jamais réattribué, même après une suppression
+function peekNextNumber() {
+  const maxExisting = getTransactions().reduce((max, t) => Math.max(max, t.number || 0), 0);
+  const stored = parseInt(localStorage.getItem(COUNTER_KEY) || '0', 10);
+  return Math.max(maxExisting, stored) + 1;
+}
+
+function nextNumber() {
+  const n = peekNextNumber();
+  localStorage.setItem(COUNTER_KEY, String(n));
+  return n;
+}
+
+// ==== RÉGLAGES ====
+function getSettings() {
+  return Object.assign({}, DEFAULT_SETTINGS, readJSON(SETTINGS_KEY, {}));
+}
+
+function saveSettings(settings) {
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+}
+
+function loadSettingsForm() {
+  const s = getSettings();
+  document.getElementById('set-review-url').value = s.reviewUrl;
+  document.getElementById('set-report-enabled').value = s.reportEnabled ? '1' : '0';
+  document.getElementById('set-report-hour').value = s.reportHour;
+  document.getElementById('set-report-email').value = s.reportEmail;
+  document.getElementById('set-ready-msg').value = s.readyMessage;
+  document.getElementById('set-supps').value = (s.supplements || []).map(x => x.name + ' ; ' + fmt(x.price)).join('\n');
+}
+
+function parseSupplements(text) {
+  const list = [];
+  const bad = [];
+  String(text || '').split('\n').forEach(raw => {
+    const line = raw.trim();
+    if (!line) return;
+    const m = line.match(/^(.+?)\s*;\s*(\d+(?:[.,]\d{1,2})?)\s*€?$/);
+    const price = m ? parseFloat(m[2].replace(',', '.')) : 0;
+    if (!m || !(price > 0) || m[1].length > 40) bad.push(line);
+    else list.push({ name: m[1].trim(), price: round2(price) });
+  });
+  return { list, bad };
+}
+
+function saveSettingsForm() {
+  const url = document.getElementById('set-review-url').value.trim();
+  const email = document.getElementById('set-report-email').value.trim();
+  const hour = document.getElementById('set-report-hour').value || DEFAULT_SETTINGS.reportHour;
+  const enabled = document.getElementById('set-report-enabled').value === '1';
+
+  if (url && !/^https:\/\/\S+$/i.test(url)) { alert('Le lien d\'avis doit commencer par https://'); return; }
+  if (enabled && !/^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]+$/.test(email)) { alert('Adresse email du rapport invalide'); return; }
+
+  const parsedSupps = parseSupplements(document.getElementById('set-supps').value);
+  if (parsedSupps.bad.length) { alert('Supplément(s) à corriger (format « Nom ; prix ») : ' + parsedSupps.bad.join(' / ')); return; }
+
+  const s = getSettings();
+  s.supplements = parsedSupps.list;
+  s.readyMessage = document.getElementById('set-ready-msg').value.trim() || DEFAULT_SETTINGS.readyMessage;
+  s.reviewUrl = url;
+  s.reportEmail = email;
+  s.reportHour = hour;
+  s.reportEnabled = enabled;
+  saveSettings(s);
+  toast('✓ Réglages enregistrés');
+}
+
+// ==== AVIS GOOGLE ====
+function qrSvg(text) {
+  try {
+    const qr = qrcode(0, 'M');
+    qr.addData(text);
+    qr.make();
+    return qr.createSvgTag({ cellSize: 4, margin: 2, scalable: true });
+  } catch (e) { return ''; }
+}
+
+function renderReview() {
+  const s = getSettings();
+  const el = document.getElementById('review-content');
+  if (!s.reviewUrl) {
+    el.innerHTML = `
+      <p style="font-size: 13px; color: var(--brown); margin-bottom: 8px;">Aucun lien d'avis enregistré.</p>
+      <p class="hint" style="margin-bottom: 12px;">Colle le lien d'avis de ta fiche Google dans les paramètres pour générer le QR code.</p>
+      <button class="btn-primary" style="width: 100%;" onclick="showSection('settings')">Ouvrir les paramètres</button>`;
+    return;
+  }
+  const svg = qrSvg(s.reviewUrl);
+  el.innerHTML = `
+    <p style="font-size: 14px; font-weight: 600; color: var(--brown); margin-bottom: 12px;">Scannez pour laisser un avis</p>
+    <div class="qr-box qr-big">${svg}</div>
+    <p class="hint" style="word-break: break-all; margin-top: 12px;">${esc(s.reviewUrl)}</p>`;
+}
+
+// ==== ÉVÉNEMENTS PRIVÉS ====
+function getEvents() {
+  return readJSON(EVENTS_KEY, []);
+}
+
+function saveEvents(events) {
+  localStorage.setItem(EVENTS_KEY, JSON.stringify(events));
+}
+
+function getActiveEvent() {
+  const id = localStorage.getItem(ACTIVE_EVENT_KEY);
+  if (!id) return null;
+  return getEvents().find(ev => String(ev.id) === id && ev.status === 'active') || null;
+}
+
+function toggleForfaitField() {
+  document.getElementById('ev-forfait-group').style.display = document.getElementById('ev-billing').value === 'forfait' ? 'block' : 'none';
+}
+
+function startEvent() {
+  if (getActiveEvent()) { alert('Un événement est déjà en cours. Clôture-le avant d\'en démarrer un autre.'); return; }
+  const name = document.getElementById('ev-name').value.trim();
+  if (!name) { alert('Donne un nom à l\'événement'); return; }
+  const billing = document.getElementById('ev-billing').value;
+
+  const ev = {
+    id: Date.now(),
+    name: name,
+    type: document.getElementById('ev-type').value,
+    client: document.getElementById('ev-client').value.trim(),
+    guests: parseInt(document.getElementById('ev-guests').value, 10) || 0,
+    billing: billing,
+    forfait: billing === 'forfait' ? (parseFloat(document.getElementById('ev-forfait').value) || 0) : 0,
+    status: 'active',
+    createdAt: new Date().toISOString()
+  };
+
+  const events = getEvents();
+  events.push(ev);
+  saveEvents(events);
+  localStorage.setItem(ACTIVE_EVENT_KEY, String(ev.id));
+
+  ['ev-name', 'ev-client', 'ev-guests', 'ev-forfait'].forEach(id => { document.getElementById(id).value = ''; });
+  renderEvents();
+  updateEventBanner();
+  toast('🎉 Événement démarré : ' + name);
+}
+
+function eventSummary(ev) {
+  const txs = getTransactions().filter(t => t.eventId === ev.id);
+  const products = {};
+  let revenue = 0;
+  let served = 0;
+  txs.forEach(t => {
+    revenue += t.amount;
+    (t.detailedItems || []).forEach(item => {
+      if (item.supplement) return;
+      const qty = item.qty || 1;
+      served += qty;
+      products[item.name] = (products[item.name] || 0) + qty;
+    });
+  });
+  return { txs, products, revenue, served, forfaitPaid: txs.some(t => t.forfaitPayment) };
+}
+
+function closeEvent(id) {
+  const ev = getEvents().find(e => e.id === id);
+  if (!ev) return;
+  const s = eventSummary(ev);
+  const warning = (ev.billing === 'forfait' && ev.forfait > 0 && !s.forfaitPaid) ? ' Attention : le forfait n\'a pas été encaissé dans l\'app.' : '';
+  showModal('Clôturer « ' + ev.name + ' » ?', 'Les ventes suivantes ne seront plus rattachées à cet événement.' + warning, 'Clôturer', () => {
+    const events = getEvents();
+    const target = events.find(e => e.id === id);
+    target.status = 'closed';
+    target.closedAt = new Date().toISOString();
+    saveEvents(events);
+    localStorage.removeItem(ACTIVE_EVENT_KEY);
+    closeModal();
+    renderEvents();
+    updateEventBanner();
+    updateCartDisplay();
+  });
+}
+
+function collectForfait(id) {
+  const ev = getEvents().find(e => e.id === id);
+  if (!ev) return;
+  if (!ev.forfait) { alert('Aucun montant de forfait renseigné pour cet événement. Utilise « + Manuel » pour saisir l\'encaissement.'); return; }
+  openPaymentChoice(ev.forfait, 'Encaisser le forfait', mode => {
+    const transaction = saveTransactionData({
+      amount: ev.forfait,
+      mode: mode,
+      client: ev.client || ev.name,
+      notes: 'Forfait ' + ev.name,
+      eventId: ev.id,
+      eventName: ev.name,
+      forfaitPayment: true
+    });
+    updateDashboard();
+    showReceipt(transaction);
+  });
+}
+
+function eventReportText(ev) {
+  const s = eventSummary(ev);
+  let text = `Bilan événement PizzaJV\n${ev.name} (${EVENT_TYPES[ev.type] || ev.type})\n`;
+  text += `Date : ${new Date(ev.createdAt).toLocaleDateString('fr-FR')}\n`;
+  if (ev.client) text += `Client : ${ev.client}\n`;
+  if (ev.guests) text += `Invités : ${ev.guests}\n`;
+  text += `Facturation : ${ev.billing === 'forfait' ? 'forfait' : 'à l\'unité'}\n\n`;
+  text += `Articles servis : ${s.served}\n`;
+  if (ev.guests && s.served) text += `Soit ${(s.served / ev.guests).toFixed(1).replace('.', ',')} article(s) par invité\n`;
+  text += `Encaissé : ${fmt(s.revenue)} €\n`;
+  if (ev.billing === 'forfait' && ev.forfait) text += `Forfait prévu : ${fmt(ev.forfait)} € (${s.forfaitPaid ? 'encaissé' : 'NON encaissé dans l\'app'})\n`;
+  const entries = Object.entries(s.products).sort((a, b) => b[1] - a[1]);
+  if (entries.length) {
+    text += `\nDétail :\n`;
+    entries.forEach(entry => { text += `${entry[1]}× ${entry[0]}\n`; });
+  }
+  return text;
+}
+
+function sendEventReport(id) {
+  const ev = getEvents().find(e => e.id === id);
+  if (!ev) return;
+  const email = getSettings().reportEmail || '';
+  window.location.href = `mailto:${email}?subject=${encodeURIComponent('Bilan ' + ev.name)}&body=${encodeURIComponent(eventReportText(ev))}`;
+}
+
+function updateEventBanner() {
+  const ev = getActiveEvent();
+  const banner = document.getElementById('event-banner');
+  banner.classList.toggle('active', !!ev);
+  if (ev) {
+    document.getElementById('event-banner-text').textContent = (EVENT_TYPES[ev.type] || '🎉').split(' ')[0] + ' ' + ev.name + (ev.billing === 'forfait' ? ' (forfait)' : '');
+  }
+}
+
+function renderEvents() {
+  const events = getEvents();
+  const active = getActiveEvent();
+  const panel = document.getElementById('event-active-panel');
+  const form = document.getElementById('event-form');
+
+  if (active) {
+    const s = eventSummary(active);
+    const isForfait = active.billing === 'forfait';
+    const detail = Object.entries(s.products).sort((a, b) => b[1] - a[1])
+      .map(entry => `<div class="setting-item"><div class="setting-label">${esc(entry[0])}</div><div class="setting-value">${entry[1]}</div></div>`).join('');
+    panel.innerHTML = `
+      <div class="settings-section" style="border: 2px solid var(--olive);">
+        <div class="settings-title">En cours</div>
+        <div style="font-size: 16px; font-weight: 700; color: var(--brown);">${esc(active.name)}</div>
+        <div class="hint">${EVENT_TYPES[active.type] || ''}${active.client ? ', ' + esc(active.client) : ''}${active.guests ? ', ' + active.guests + ' invités' : ''}</div>
+        <div class="setting-item"><div class="setting-label">Articles servis</div><div class="setting-value">${s.served}</div></div>
+        <div class="setting-item"><div class="setting-label">Encaissé</div><div class="setting-value">${fmt(s.revenue)} €</div></div>
+        ${isForfait ? `<div class="setting-item"><div class="setting-label">Forfait</div><div class="setting-value">${active.forfait ? fmt(active.forfait) + ' €, ' + (s.forfaitPaid ? 'encaissé ✓' : 'à encaisser') : 'montant non renseigné'}</div></div>` : ''}
+        ${detail}
+        <div class="event-actions">
+          <button class="btn-primary" onclick="showSection('catalog')">📋 ${isForfait ? 'Servir' : 'Vendre'} au catalogue</button>
+          ${isForfait && !s.forfaitPaid ? `<button onclick="collectForfait(${active.id})">💶 Encaisser le forfait</button>` : ''}
+          <button class="btn-secondary" onclick="sendEventReport(${active.id})">📧 Bilan</button>
+          <button class="btn-danger" onclick="closeEvent(${active.id})">Clôturer</button>
+        </div>
+      </div>`;
+    form.style.display = 'none';
+  } else {
+    panel.innerHTML = '';
+    form.style.display = 'block';
+    toggleForfaitField();
+  }
+
+  const closed = events.filter(ev => ev.status === 'closed').reverse();
+  document.getElementById('events-closed').innerHTML = closed.length === 0
+    ? '<p class="hint" style="text-align: center; padding: 8px;">Aucun événement terminé</p>'
+    : closed.map(ev => {
+        const s = eventSummary(ev);
+        return `<div class="setting-item"><div><div class="setting-label">${esc(ev.name)}</div><div class="setting-value">${new Date(ev.createdAt).toLocaleDateString('fr-FR')}, ${s.served} articles, ${fmt(s.revenue)} €</div></div><button class="btn-secondary" style="padding: 6px 10px; font-size: 12px;" onclick="sendEventReport(${ev.id})">📧 Bilan</button></div>`;
+      }).join('');
+}
+
+// ==== RAPPORT QUOTIDIEN ====
+function txOfDay(key) {
+  return getTransactions().filter(t => dayKey(t.date) === key);
+}
+
+function buildDailyReport(key) {
+  const txs = txOfDay(key);
+  const paid = txs.filter(t => t.amount > 0);
+  const total = paid.reduce((sum, t) => sum + t.amount, 0);
+
+  let text = `Rapport PizzaJV du ${frDate(key)}\n\n`;
+  text += `Encaissé : ${fmt(total)} €\n`;
+  text += `Ventes : ${paid.length}`;
+  if (paid.length) text += ` (panier moyen ${fmt(total / paid.length)} €)`;
+  text += `\n`;
+
+  const numbers = txs.map(t => t.number).filter(Boolean);
+  if (numbers.length) text += `Reçus N° ${String(Math.min(...numbers)).padStart(4, '0')} à ${String(Math.max(...numbers)).padStart(4, '0')}\n`;
+
+  const modes = {};
+  paid.forEach(t => { modes[t.mode] = (modes[t.mode] || 0) + t.amount; });
+  if (Object.keys(modes).length) {
+    text += `\nPar mode de paiement :\n`;
+    Object.entries(modes).sort((a, b) => b[1] - a[1]).forEach(entry => { text += `${MODE_LABELS[entry[0]] || entry[0]} : ${fmt(entry[1])} €\n`; });
+  }
+
+  const products = {};
+  txs.filter(t => !t.forfaitService).forEach(t => {
+    (t.detailedItems || []).forEach(item => {
+      if (!products[item.name]) products[item.name] = { qty: 0, revenue: 0 };
+      products[item.name].qty += item.qty || 1;
+      products[item.name].revenue += item.price * (item.qty || 1);
+    });
+  });
+  const productEntries = Object.entries(products).sort((a, b) => b[1].qty - a[1].qty);
+  if (productEntries.length) {
+    text += `\nProduits vendus :\n`;
+    productEntries.forEach(entry => { text += `${entry[1].qty}× ${entry[0]} : ${fmt(entry[1].revenue)} €\n`; });
+  }
+
+  const discounts = paid.reduce((s, t) => s + ((t.discount && t.discount.amount) || 0), 0);
+  if (discounts > 0) text += `\nRemises accordées : ${fmt(discounts)} € (déjà déduites du total)\n`;
+
+  const manual = paid.filter(t => !t.detailedItems && !t.forfaitPayment);
+  if (manual.length) {
+    text += `\nSaisies manuelles : ${manual.length} pour ${fmt(manual.reduce((sum, t) => sum + t.amount, 0))} €\n`;
+  }
+
+  const eventIds = [...new Set(txs.filter(t => t.eventId).map(t => t.eventId))];
+  if (eventIds.length) {
+    text += `\nÉvénements privés :\n`;
+    eventIds.forEach(id => {
+      const evTxs = txs.filter(t => t.eventId === id);
+      const served = evTxs.reduce((sum, t) => sum + (t.detailedItems || []).reduce((s, i) => s + (i.supplement ? 0 : (i.qty || 1)), 0), 0);
+      const cashed = evTxs.reduce((sum, t) => sum + t.amount, 0);
+      text += `${evTxs[0].eventName} : ${served} article(s) servi(s), ${fmt(cashed)} € encaissés ce jour\n`;
+    });
+  }
+
+  text += `\nRapport établi à partir des saisies de l'app (hors ventes enregistrées uniquement sur le TPE).`;
+  return { text, total, sales: paid.length, count: txs.length };
+}
+
+// Renvoie le jour dont le rapport est à envoyer, ou null
+function pendingReportDay(fromTimer) {
+  const s = getSettings();
+  if (!s.reportEnabled || !s.reportStart) return null;
+  const now = new Date();
+  const todayKey = dayKey(now);
+  const hm = (s.reportHour || '21:00').split(':').map(Number);
+  const due = now.getHours() * 60 + now.getMinutes() >= hm[0] * 60 + (hm[1] || 0);
+  const sent = readJSON(REPORTS_KEY, {});
+
+  const counts = {};
+  getTransactions().forEach(t => {
+    const key = dayKey(t.date);
+    if (key >= s.reportStart) counts[key] = (counts[key] || 0) + 1;
+  });
+
+  const keys = Object.keys(counts).sort();
+  for (let i = 0; i < keys.length; i++) {
+    const key = keys[i];
+    if (key > todayKey) continue;
+    if (key === todayKey && !due) continue;
+    if (sent[key] === counts[key]) continue;
+    // Rapport déjà envoyé puis nouvelles ventes : on ne relance qu'à la réouverture de l'app
+    if (fromTimer && sent[key] !== undefined) continue;
+    return key;
+  }
+  return null;
+}
+
+function checkDailyReport(fromTimer) {
+  if (document.querySelector('.modal-backdrop.active')) return;
+  if (getCart().length > 0) return;
+  const key = pendingReportDay(fromTimer);
+  if (!key) return;
+  const report = buildDailyReport(key);
+  const stamp = key + ':' + report.count;
+  if (sessionStorage.getItem(SNOOZE_KEY) === stamp) return;
+
+  showModal(
+    '📅 Rapport du ' + frDate(key),
+    `${report.sales} vente${report.sales > 1 ? 's' : ''}, ${fmt(report.total)} € encaissés. Préparer l'email pour ${getSettings().reportEmail} ?`,
+    'Envoyer',
+    () => { closeModal(); sendDailyReport(key); },
+    'Plus tard',
+    () => { sessionStorage.setItem(SNOOZE_KEY, stamp); closeModal(); }
+  );
+}
+
+function sendDailyReport(key) {
+  const report = buildDailyReport(key);
+  if (report.count === 0) return;
+  const sent = readJSON(REPORTS_KEY, {});
+  sent[key] = report.count;
+  localStorage.setItem(REPORTS_KEY, JSON.stringify(sent));
+  const email = getSettings().reportEmail || '';
+  const subject = `Rapport PizzaJV ${frDate(key)} : ${fmt(report.total)} €`;
+  window.location.href = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(report.text)}`;
+}
+
+function manualReport() {
+  const key = dayKey(new Date());
+  if (txOfDay(key).length === 0) { alert('Aucune vente aujourd\'hui : pas de rapport à envoyer.'); return; }
+  sendDailyReport(key);
+}
+
+// ==== PRÉVENIR : PIZZA PRÊTE ====
+function normalizePhone(raw) {
+  let d = String(raw || '').replace(/[^\d+]/g, '');
+  if (!d) return '';
+  if (d.startsWith('00')) d = '+' + d.slice(2);
+  if (d.startsWith('0') && d.length === 10) d = '+33' + d.slice(1);
+  if (!d.startsWith('+') && d.startsWith('33') && d.length === 11) d = '+' + d;
+  return d;
+}
+
+function readyMessage(t) {
+  const name = ((t.notify && t.notify.name) || '').trim();
+  const template = getSettings().readyMessage || DEFAULT_SETTINGS.readyMessage;
+  return template
+    .replace(/\s*\{prenom\}/g, name ? ' ' + name : '')
+    .replace(/\{numero\}/g, t.number ? String(t.number).padStart(4, '0') : '')
+    .replace(/ {2,}/g, ' ')
+    .trim();
+}
+
+function readyLink(t, channel) {
+  const phone = normalizePhone(t.notify && t.notify.phone);
+  const body = encodeURIComponent(readyMessage(t));
+  return channel === 'wa'
+    ? 'https://wa.me/' + phone.replace('+', '') + '?text=' + body
+    : 'sms:' + phone + '?&body=' + body;
+}
+
+function sendReady(id, channel) {
+  const list = getTransactions();
+  const t = list.find(x => x.id === id);
+  if (!t || !t.notify) return;
+  t.notify.sentAt = new Date().toISOString();
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+  const link = readyLink(t, channel);
+  renderReadyPanel();
+  renderReadyBox(t);
+  if (channel === 'wa') window.open(link, '_blank');
+  else window.location.href = link;
+}
+
+function renderReadyBox(t) {
+  const box = document.getElementById('ready-box');
+  if (!box) return;
+  if (!t || !t.notify) { box.innerHTML = ''; return; }
+  const who = [t.notify.name, t.notify.phone].filter(Boolean).map(esc).join(', ');
+  const sent = t.notify.sentAt ? `<div class="hint" style="margin-top: 8px;">✓ Message préparé à ${new Date(t.notify.sentAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</div>` : '';
+  box.innerHTML = `
+    <div class="settings-section">
+      <div class="settings-title">🔔 Pizza prête</div>
+      ${who ? `<div class="hint" style="margin: 0 0 6px;">${who}</div>` : ''}
+      <div class="hint" style="font-style: italic; margin: 0 0 10px;">${esc(readyMessage(t))}</div>
+      <div class="send-buttons" style="grid-template-columns: 1fr 1fr; margin-bottom: 0;">
+        <button class="btn-sms" onclick="sendReady(${t.id}, 'sms')">💬 SMS</button>
+        <button class="btn-whatsapp" onclick="sendReady(${t.id}, 'wa')">🟢 WhatsApp</button>
+      </div>
+      ${sent}
+    </div>`;
+}
+
+function renderReadyPanel() {
+  const el = document.getElementById('ready-panel');
+  if (!el) return;
+  const today = dayKey(new Date());
+  const list = getTransactions().filter(t => t.notify && dayKey(t.date) === today);
+  if (list.length === 0) { el.innerHTML = ''; return; }
+  const pending = list.filter(t => !t.notify.sentAt).sort((a, b) => new Date(a.date) - new Date(b.date));
+  const done = list.filter(t => t.notify.sentAt).sort((a, b) => new Date(b.notify.sentAt) - new Date(a.notify.sentAt)).slice(0, 3);
+  const label = t => '#' + String(t.number).padStart(4, '0') + ' ' + esc(t.notify.name || 'sans prénom');
+
+  el.innerHTML = `
+    <div class="settings-section">
+      <div class="settings-title">🔔 À prévenir (${pending.length})</div>
+      ${pending.length === 0 ? '<p class="hint" style="margin: 0;">Tout le monde est prévenu.</p>' : pending.map(t => `
+        <div class="setting-item">
+          <div><div class="setting-label">${label(t)}</div><div class="setting-value">${esc(t.notify.phone || 'numéro non saisi')}</div></div>
+          <div style="display: flex; gap: 6px;">
+            <button class="btn-sms" style="padding: 8px 10px;" onclick="sendReady(${t.id}, 'sms')">💬</button>
+            <button class="btn-whatsapp" style="padding: 8px 10px;" onclick="sendReady(${t.id}, 'wa')">🟢</button>
+          </div>
+        </div>`).join('')}
+      ${done.map(t => `<div class="hint" style="margin: 6px 0 0;">✓ ${label(t)} : message préparé à ${new Date(t.notify.sentAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</div>`).join('')}
+    </div>`;
+}
+
+// Minimisation des données : prénom et numéro n'existent que le jour de la vente
+function purgeOldNotify() {
+  const list = getTransactions();
+  const today = dayKey(new Date());
+  let changed = false;
+  list.forEach(t => {
+    if (t.notify && dayKey(t.date) < today) { delete t.notify; changed = true; }
+  });
+  if (changed) localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+}
+
+// ==== DÉMARRAGE ====
+(function initSettings() {
+  const s = getSettings();
+  if (!s.reportStart) { s.reportStart = dayKey(new Date()); saveSettings(s); }
+})();
+
+// Migration : les anciennes versions avaient enregistré l'adresse sans rue
+(function migrateAddress() {
+  const biz = getBusiness();
+  if (biz.address === '17170 Courçon') {
+    biz.address = DEFAULT_BUSINESS.address;
+    localStorage.setItem(BUSINESS_KEY, JSON.stringify(biz));
+  }
+})();
+
+purgeOldNotify();
+applyTheme();
+renderCatalog();
+updateDashboard();
+updateEventBanner();
+
+setTimeout(() => checkDailyReport(false), 800);
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) { purgeOldNotify(); updateDashboard(); checkDailyReport(false); }
+});
+setInterval(() => checkDailyReport(true), 60000);
+</script>
+
+</body>
+</html>
